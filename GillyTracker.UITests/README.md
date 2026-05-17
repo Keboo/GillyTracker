@@ -1,6 +1,6 @@
 # GillyTracker UI Tests
 
-Comprehensive UI test suite for the Q&A System built with Playwright and MSTest.
+Comprehensive UI test suite generated from the template; update scenarios as the Gilly sighting workflow evolves.
 
 ## Overview
 

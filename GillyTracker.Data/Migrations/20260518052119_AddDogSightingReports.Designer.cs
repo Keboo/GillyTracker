@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GillyTracker.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260518051551_AddVerboseTelegramFeatures")]
-    partial class AddVerboseTelegramFeatures
+    [Migration("20260518052119_AddDogSightingReports")]
+    partial class AddDogSightingReports
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

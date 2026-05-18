@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GillyTracker.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddVerboseTelegramFeatures : Migration
+    public partial class AddDogSightingReports : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

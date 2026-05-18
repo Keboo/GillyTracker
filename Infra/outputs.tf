@@ -1,6 +1,6 @@
 output "acr_login_server" {
   description = "The login server for the Azure Container Registry"
-  value       = var.acr_login_server
+  value       = module.prod.acr_login_server
 }
 
 output "backend_container_app_name" {

@@ -33,21 +33,3 @@ variable "existing_resource_group_name" {
   type        = string
   default     = "KebooDev"
 }
-
-variable "existing_container_app_environment_name" {
-  description = "Existing Azure Container App Environment name."
-  type        = string
-  default     = "keboodev-env"
-}
-
-variable "acr_login_server" {
-  description = "Existing Azure Container Registry login server."
-  type        = string
-  default     = "keboodevacr.azurecr.io"
-}
-
-variable "database_connection_string" {
-  description = "Connection string for the existing SQL database."
-  type        = string
-  sensitive   = true
-}

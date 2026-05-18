@@ -4,6 +4,10 @@ locals {
     {
       "Environment" = local.environment
   })
+  sql_server_name   = "keboodev-sql"
+  sql_database_name = "keboodevdb"
+
+  database_connection_string = "Server=tcp:${data.azurerm_mssql_server.existing.fully_qualified_domain_name},1433;Initial Catalog=${data.azurerm_mssql_database.existing.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;Authentication=\"Active Directory Default\";"
 }
 
 resource "azurerm_resource_group" "resource_group" {
@@ -21,8 +25,23 @@ resource "azurerm_user_assigned_identity" "app_identity" {
 }
 
 data "azurerm_container_app_environment" "existing" {
-  name                = var.existing_container_app_environment_name
+  name                = "keboodev-env"
   resource_group_name = azurerm_resource_group.resource_group.name
+}
+
+data "azurerm_container_registry" "existing" {
+  name                = "keboodevacr"
+  resource_group_name = azurerm_resource_group.resource_group.name
+}
+
+data "azurerm_mssql_server" "existing" {
+  name                = local.sql_server_name
+  resource_group_name = azurerm_resource_group.resource_group.name
+}
+
+data "azurerm_mssql_database" "existing" {
+  name      = local.sql_database_name
+  server_id = data.azurerm_mssql_server.existing.id
 }
 
 module "backend_container_app" {
@@ -32,11 +51,11 @@ module "backend_container_app" {
   container_app_environment_id    = data.azurerm_container_app_environment.existing.id
   resource_group_name             = azurerm_resource_group.resource_group.name
   identity_id                     = azurerm_user_assigned_identity.app_identity.id
-  container_registry_login_server = var.acr_login_server
+  container_registry_login_server = data.azurerm_container_registry.existing.login_server
 
   env_vars = {
-    AZURE_CLIENT_ID = azurerm_user_assigned_identity.app_identity.client_id
-    ConnectionStrings__Database = var.database_connection_string
+    AZURE_CLIENT_ID                       = azurerm_user_assigned_identity.app_identity.client_id
+    ConnectionStrings__Database           = local.database_connection_string
     APPLICATIONINSIGHTS_CONNECTION_STRING = module.application_insights.application_insights.connection_string
   }
 }

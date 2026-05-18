@@ -26,4 +26,4 @@ Terraform is configured to use existing Azure resources:
 - Resource Group: `KebooDev`
 - ACR: `keboodevacr.azurecr.io`
 - Container App Environment: `keboodev-env`
-- SQL Database connection string supplied via `database_connection_string` variable
+- SQL Server and database are discovered via Terraform data sources in the existing resource group

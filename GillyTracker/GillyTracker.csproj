@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <SpaRoot>..\GillyTracker.Web\</SpaRoot>
+    <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
+    <SpaProxyLaunchCommand>pnpm dev</SpaProxyLaunchCommand>
+    <EnableDefaultRazorComponentItems>false</EnableDefaultRazorComponentItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GillyTracker.Core\GillyTracker.Core.csproj" />
+    <ProjectReference Include="..\GillyTracker.Data\GillyTracker.Data.csproj" />
+    <ProjectReference Include="..\GillyTracker.ServiceDefaults\GillyTracker.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\GillyTracker.Web\GillyTracker.Web.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="Microsoft.AspNetCore.SpaProxy" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+    <!-- Copy the React build output to wwwroot -->
+    <ItemGroup>
+      <DistFiles Include="$(SpaRoot)dist\**" />
+      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+</Project>

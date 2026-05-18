@@ -482,11 +482,7 @@ public static class Resources
 
         Task<bool> ApplyMigrationsAsync()
         {
-            // Determine the build configuration to use
-            // Check common environment variable or default to Debug for local development
-            string configuration = Environment.GetEnvironmentVariable("DOTNET_BUILD_CONFIGURATION") 
-                ?? Environment.GetEnvironmentVariable("Configuration") 
-                ?? "Debug";
+            string configuration = ResolveBuildConfiguration();
             
             ProcessStartInfo psi = new()
             {
@@ -511,6 +507,31 @@ public static class Resources
             };
             return database.ExecuteProcessAsync(services, psi, cancellationToken);
         }
+    }
+
+    private static string ResolveBuildConfiguration()
+    {
+        string? configuredValue = Environment.GetEnvironmentVariable("DOTNET_BUILD_CONFIGURATION")
+            ?? Environment.GetEnvironmentVariable("Configuration");
+
+        if (!string.IsNullOrWhiteSpace(configuredValue))
+        {
+            return configuredValue;
+        }
+
+        DirectoryInfo? currentDirectory = new(AppContext.BaseDirectory);
+
+        while (currentDirectory is not null)
+        {
+            if (currentDirectory.Parent?.Name.Equals("bin", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return currentDirectory.Name;
+            }
+
+            currentDirectory = currentDirectory.Parent;
+        }
+
+        return "Debug";
     }
 
     private static void RefreshPathVariable()

@@ -91,6 +91,8 @@ jobs:
       # https://learn.microsoft.com/dotnet/core/testing/microsoft-testing-platform-retry#retry-1
       - name: Test
         run: dotnet test --no-build --configuration Release --verbosity normal --maximum-failed-tests 10
+        env:
+          DOTNET_BUILD_CONFIGURATION: Release
 
       - name: Upload test failure screenshots
         if: failure()

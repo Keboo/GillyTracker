@@ -155,7 +155,7 @@ namespace GillyTracker.Data.Migrations
 
                     b.HasIndex("RoomId", "IsApproved", "IsAnswered");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("GillyTracker.Data.Room", b =>
@@ -193,7 +193,7 @@ namespace GillyTracker.Data.Migrations
                     b.HasIndex("FriendlyName")
                         .IsUnique();
 
-                    b.ToTable("Rooms");
+                    b.ToTable("Rooms", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -443,7 +443,7 @@ namespace GillyTracker.Data.Migrations
 
                             b1.HasKey("IdentityUserPasskeyCredentialId");
 
-                            b1.ToTable("AspNetUserPasskeys");
+                            b1.ToTable("AspNetUserPasskeys", (string)null);
 
                             b1
                                 .ToJson("Data")

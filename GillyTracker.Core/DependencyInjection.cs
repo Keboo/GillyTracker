@@ -16,9 +16,15 @@ public static class DependencyInjection
         var connectionString = builder.Configuration.GetConnectionString(ConnectionStrings.DatabaseKey) 
             ?? throw new InvalidOperationException($"Connection string '{ConnectionStrings.DatabaseKey}' not found.");
 
+        // For development with self-signed certificates, disable encryption in the connection string
+        if (builder.Environment.IsDevelopment() && !connectionString.Contains("Encrypt=", StringComparison.OrdinalIgnoreCase))
+        {
+            connectionString = connectionString.TrimEnd(';') + ";Encrypt=false";
+        }
+
         void BuildDbOptions(DbContextOptionsBuilder options)
         {
-            options.UseSqlServer(connectionString);
+            options.UseAzureSql(connectionString);
         }
         builder.Services.AddDbContextFactory<ApplicationDbContext>(BuildDbOptions);
         builder.Services.AddDbContextPool<ApplicationDbContext>(BuildDbOptions);

@@ -419,6 +419,9 @@ public static class Resources
 
     private static async Task<bool> ApplyDatabaseMigrationsAsync(SqlServerDatabaseResource database, IServiceProvider services, CancellationToken cancellationToken)
     {
+        const int maxAttempts = 6;
+        TimeSpan retryDelay = TimeSpan.FromSeconds(5);
+
         string? connectionString = await database.ConnectionStringExpression.GetValueAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(connectionString)) throw new InvalidOperationException("Connection string for database not available");
 
@@ -426,11 +429,44 @@ public static class Resources
 
         logger.LogInformation("Applying any pending migrations to the database");
 
-        bool processResult = await ApplyMigrationsAsync();
+        bool processResult = false;
+        bool attemptedToolRestore = false;
 
-        if (!processResult && await RestoreDotnetToolsAsync(database, services))
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
             processResult = await ApplyMigrationsAsync();
+
+            if (processResult)
+            {
+                break;
+            }
+
+            if (!attemptedToolRestore)
+            {
+                attemptedToolRestore = true;
+
+                if (await RestoreDotnetToolsAsync(database, services))
+                {
+                    processResult = await ApplyMigrationsAsync();
+                    if (processResult)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (attempt == maxAttempts)
+            {
+                break;
+            }
+
+            logger.LogWarning(
+                "Applying database migrations failed on attempt {Attempt} of {MaxAttempts}. Waiting {DelaySeconds} seconds before retrying.",
+                attempt,
+                maxAttempts,
+                retryDelay.TotalSeconds);
+
+            await Task.Delay(retryDelay, cancellationToken);
         }
 
         if (processResult)

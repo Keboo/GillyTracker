@@ -41,7 +41,7 @@ export default function MyRooms() {
   }, [enqueueSnackbar])
 
   useEffect(() => {
-    loadRooms()
+    void loadRooms()
   }, [loadRooms])
 
   const handleCreateRoom = async () => {

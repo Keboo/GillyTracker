@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { UserInfo, LoginRequest, RegisterRequest } from '@/types'
 import { apiClient } from '@/services/apiClient'
 
@@ -17,7 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const userData = await apiClient.get<UserInfo>('/api/auth/user')
       setUser(userData)
@@ -26,11 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    refreshUser()
-  }, [])
+    void refreshUser()
+  }, [refreshUser])
 
   const login = async (credentials: LoginRequest) => {
     const userData = await apiClient.post<UserInfo>('/api/auth/login', credentials)

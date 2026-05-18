@@ -18,7 +18,14 @@ public static class DependencyInjection
 
         void BuildDbOptions(DbContextOptionsBuilder options)
         {
-            options.UseAzureSql(connectionString);
+            if (builder.Environment.IsDevelopment())
+            {
+                options.UseSqlServer(connectionString);
+            }
+            else
+            {
+                options.UseAzureSql(connectionString);
+            }
         }
         builder.Services.AddDbContextFactory<ApplicationDbContext>(BuildDbOptions);
         builder.Services.AddDbContextPool<ApplicationDbContext>(BuildDbOptions);

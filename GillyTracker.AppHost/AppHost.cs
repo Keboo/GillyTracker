@@ -50,7 +50,7 @@ var backend = builder.AddProject<Projects.GillyTracker>("GillyTracker-backend")
     .PublishAsAzureContainerApp((infra, app) => app.Template.Scale.MaxReplicas = 1);
 
 var frontendApp = builder.AddJavaScriptApp(Resources.Frontend, "../GillyTracker.Web", "dev")
-    .WithNpm(install: true)
+    .WithPnpm()
     .WithHttpEndpoint(env: "PORT")
     .WithExternalHttpEndpoints()
     .WithDependency(backend)

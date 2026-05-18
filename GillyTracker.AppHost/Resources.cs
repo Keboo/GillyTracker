@@ -419,6 +419,9 @@ public static class Resources
 
     private static async Task<bool> ApplyDatabaseMigrationsAsync(SqlServerDatabaseResource database, IServiceProvider services, CancellationToken cancellationToken)
     {
+        const int maxAttempts = 6;
+        TimeSpan retryDelay = TimeSpan.FromSeconds(5);
+
         string? connectionString = await database.ConnectionStringExpression.GetValueAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(connectionString)) throw new InvalidOperationException("Connection string for database not available");
 
@@ -426,11 +429,44 @@ public static class Resources
 
         logger.LogInformation("Applying any pending migrations to the database");
 
-        bool processResult = await ApplyMigrationsAsync();
+        bool processResult = false;
+        bool attemptedToolRestore = false;
 
-        if (!processResult && await RestoreDotnetToolsAsync(database, services))
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
             processResult = await ApplyMigrationsAsync();
+
+            if (processResult)
+            {
+                break;
+            }
+
+            if (!attemptedToolRestore)
+            {
+                attemptedToolRestore = true;
+
+                if (await RestoreDotnetToolsAsync(database, services))
+                {
+                    processResult = await ApplyMigrationsAsync();
+                    if (processResult)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (attempt == maxAttempts)
+            {
+                break;
+            }
+
+            logger.LogWarning(
+                "Applying database migrations failed on attempt {Attempt} of {MaxAttempts}. Waiting {DelaySeconds} seconds before retrying.",
+                attempt,
+                maxAttempts,
+                retryDelay.TotalSeconds);
+
+            await Task.Delay(retryDelay, cancellationToken);
         }
 
         if (processResult)
@@ -446,11 +482,7 @@ public static class Resources
 
         Task<bool> ApplyMigrationsAsync()
         {
-            // Determine the build configuration to use
-            // Check common environment variable or default to Debug for local development
-            string configuration = Environment.GetEnvironmentVariable("DOTNET_BUILD_CONFIGURATION") 
-                ?? Environment.GetEnvironmentVariable("Configuration") 
-                ?? "Debug";
+            string configuration = ResolveBuildConfiguration();
             
             ProcessStartInfo psi = new()
             {
@@ -475,6 +507,31 @@ public static class Resources
             };
             return database.ExecuteProcessAsync(services, psi, cancellationToken);
         }
+    }
+
+    private static string ResolveBuildConfiguration()
+    {
+        string? configuredValue = Environment.GetEnvironmentVariable("DOTNET_BUILD_CONFIGURATION")
+            ?? Environment.GetEnvironmentVariable("Configuration");
+
+        if (!string.IsNullOrWhiteSpace(configuredValue))
+        {
+            return configuredValue;
+        }
+
+        DirectoryInfo? currentDirectory = new(AppContext.BaseDirectory);
+
+        while (currentDirectory is not null)
+        {
+            if (currentDirectory.Parent?.Name.Equals("bin", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return currentDirectory.Name;
+            }
+
+            currentDirectory = currentDirectory.Parent;
+        }
+
+        return "Debug";
     }
 
     private static void RefreshPathVariable()

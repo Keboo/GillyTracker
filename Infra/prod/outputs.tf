@@ -14,7 +14,7 @@ output "backend_container_app_name" {
 
 output "resource_group_name" {
   description = "The name of the resource group"
-  value       = azurerm_resource_group.resource_group.name
+  value       = data.azurerm_resource_group.resource_group.name
 }
 
 output "database_connection_string" {

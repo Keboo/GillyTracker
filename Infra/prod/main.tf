@@ -10,33 +10,31 @@ locals {
   database_connection_string = "Server=tcp:${data.azurerm_mssql_server.existing.fully_qualified_domain_name},1433;Initial Catalog=${data.azurerm_mssql_database.existing.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;Authentication=\"Active Directory Default\";"
 }
 
-resource "azurerm_resource_group" "resource_group" {
-  name     = var.existing_resource_group_name
-  location = var.location
-  tags     = local.tags
+data "azurerm_resource_group" "resource_group" {
+  name = var.existing_resource_group_name
 }
 
 resource "azurerm_user_assigned_identity" "app_identity" {
   name                = "gillytracker-${lower(local.environment)}-mi"
-  location            = azurerm_resource_group.resource_group.location
-  resource_group_name = azurerm_resource_group.resource_group.name
+  location            = data.azurerm_resource_group.resource_group.location
+  resource_group_name = data.azurerm_resource_group.resource_group.name
 
   tags = local.tags
 }
 
 data "azurerm_container_app_environment" "existing" {
   name                = "keboodev-env"
-  resource_group_name = azurerm_resource_group.resource_group.name
+  resource_group_name = data.azurerm_resource_group.resource_group.name
 }
 
 data "azurerm_container_registry" "existing" {
   name                = "keboodevacr"
-  resource_group_name = azurerm_resource_group.resource_group.name
+  resource_group_name = data.azurerm_resource_group.resource_group.name
 }
 
 data "azurerm_mssql_server" "existing" {
   name                = local.sql_server_name
-  resource_group_name = azurerm_resource_group.resource_group.name
+  resource_group_name = data.azurerm_resource_group.resource_group.name
 }
 
 data "azurerm_mssql_database" "existing" {
@@ -49,7 +47,7 @@ module "backend_container_app" {
 
   name                            = "gillytracker-${lower(local.environment)}-backend"
   container_app_environment_id    = data.azurerm_container_app_environment.existing.id
-  resource_group_name             = azurerm_resource_group.resource_group.name
+  resource_group_name             = data.azurerm_resource_group.resource_group.name
   identity_id                     = azurerm_user_assigned_identity.app_identity.id
   container_registry_login_server = data.azurerm_container_registry.existing.login_server
 
@@ -64,7 +62,7 @@ module "application_insights" {
   source = "../modules/app_insights"
 
   environment    = local.environment
-  resource_group = azurerm_resource_group.resource_group
+  resource_group = data.azurerm_resource_group.resource_group
   tags           = local.tags
 
   reader_ids = {}

@@ -61,7 +61,24 @@ module "backend_container_app" {
     AZURE_CLIENT_ID                       = azurerm_user_assigned_identity.app_identity.client_id
     ConnectionStrings__Database           = local.database_connection_string
     APPLICATIONINSIGHTS_CONNECTION_STRING = module.application_insights.application_insights.connection_string
+    # CORS: Allow the Static Web App origin
+    AllowedOrigins__0 = "https://${module.static_web_app.default_host_name}"
   }
+
+  depends_on = [module.static_web_app]
+}
+
+module "static_web_app" {
+  source = "../modules/static_web_app"
+
+  name           = "gillytracker-${lower(local.environment)}-swa"
+  resource_group = data.azurerm_resource_group.resource_group
+  sku = {
+    tier = "Free"
+    size = "Free"
+  }
+
+  tags = local.tags
 }
 
 module "application_insights" {

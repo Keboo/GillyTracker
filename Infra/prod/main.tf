@@ -32,6 +32,12 @@ data "azurerm_container_registry" "existing" {
   resource_group_name = data.azurerm_resource_group.resource_group.name
 }
 
+resource "azurerm_role_assignment" "app_identity_acr_pull" {
+  scope                = data.azurerm_container_registry.existing.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.app_identity.principal_id
+}
+
 data "azurerm_mssql_server" "existing" {
   name                = local.sql_server_name
   resource_group_name = data.azurerm_resource_group.resource_group.name

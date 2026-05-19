@@ -27,3 +27,4 @@ Terraform is configured to use existing Azure resources:
 - ACR: `keboodevacr.azurecr.io`
 - Container App Environment: `keboodev-env`
 - SQL Server and database are discovered via Terraform data sources in the existing resource group
+- Frontend hosting is provisioned as an Azure Static Web App, and backend CORS allows that origin

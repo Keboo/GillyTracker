@@ -39,3 +39,9 @@ output "applicationinsights_connection_string" {
   value       = module.prod.applicationinsights_connection_string
   sensitive   = true
 }
+
+output "database_connection_string" {
+  description = "The connection string for the SQL database"
+  value       = module.prod.database_connection_string
+  sensitive   = true
+}

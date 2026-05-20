@@ -73,6 +73,7 @@ module "static_web_app" {
 
   name           = "gillytracker-${lower(local.environment)}-swa"
   resource_group = data.azurerm_resource_group.resource_group
+  location       = "westus2"
   sku = {
     tier = "Free"
     size = "Free"

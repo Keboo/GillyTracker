@@ -4,7 +4,7 @@
 resource "azurerm_static_web_app" "app" {
   name                = var.name
   resource_group_name = var.resource_group.name
-  location            = var.resource_group.location
+  location            = coalesce(var.location, var.resource_group.location)
   sku_tier            = var.sku.tier
   sku_size            = var.sku.size
 

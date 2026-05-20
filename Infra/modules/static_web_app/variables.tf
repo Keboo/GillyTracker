@@ -39,6 +39,12 @@ variable "app_settings" {
   default     = {}
 }
 
+variable "location" {
+  description = "Azure region for the static web app. Overrides the resource group location when set. Must be one of the regions that support Microsoft.Web/staticSites."
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags to apply to the resource"
   type        = map(string)

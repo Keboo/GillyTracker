@@ -4,17 +4,9 @@ locals {
   }
 
   database_users = {
-    "GillyTracker-GitHubActions"      = data.azuread_service_principal.github_actions_app.object_id
-    "GillyTracker-GitHubActionsInfra" = data.azuread_service_principal.github_actions_infra.object_id
+    "GillyTracker-GitHubActions"      = var.GITHUB_ACTIONS_APP_OBJECT_ID
+    "GillyTracker-GitHubActionsInfra" = var.GITHUB_ACTIONS_INFRA_OBJECT_ID
   }
-}
-
-data "azuread_service_principal" "github_actions_app" {
-  display_name = "GillyTracker-GitHubActions"
-}
-
-data "azuread_service_principal" "github_actions_infra" {
-  display_name = "GillyTracker-GitHubActionsInfra"
 }
 
 module "prod" {

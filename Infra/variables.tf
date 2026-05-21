@@ -16,6 +16,18 @@ variable "SUBSCRIPTION_ID" {
   default     = ""
 }
 
+variable "GITHUB_ACTIONS_APP_OBJECT_ID" {
+  description = "Object ID for the GillyTracker-GitHubActions service principal."
+  type        = string
+  default     = ""
+}
+
+variable "GITHUB_ACTIONS_INFRA_OBJECT_ID" {
+  description = "Object ID for the GillyTracker-GitHubActionsInfra service principal."
+  type        = string
+  default     = ""
+}
+
 variable "location" {
   description = "Azure region for the deployment resources."
   type        = string

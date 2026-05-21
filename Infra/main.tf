@@ -13,9 +13,9 @@ locals {
 module "prod" {
   source = "./prod"
 
-  environment                      = var.environment
-  location                         = var.location
-  tags                             = local.default_tags
-  existing_resource_group_name     = var.existing_resource_group_name
-  database_users_client_ids        = local.database_users_client_ids
+  environment                  = var.environment
+  location                     = var.location
+  tags                         = local.default_tags
+  existing_resource_group_name = var.existing_resource_group_name
+  database_users_client_ids    = local.database_users_client_ids
 }

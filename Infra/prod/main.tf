@@ -55,10 +55,10 @@ data "azurerm_mssql_database" "existing" {
   server_id = data.azurerm_mssql_server.existing.id
 }
 
-data "azurerm_service_principal" "database_users" {
+data "azuread_service_principal" "database_users" {
   for_each = var.database_users_client_ids
 
-  application_id = each.value
+  client_id = each.value
 }
 
 resource "terraform_data" "setup_database_user" {
@@ -86,8 +86,8 @@ resource "terraform_data" "setup_database_user" {
 
         $ErrorActionPreference = 'Stop'
 
-        Write-Host "Using object ID for service principal: ${data.azurerm_service_principal.database_users[each.key].object_id}"
-        $principalObjectId = "${data.azurerm_service_principal.database_users[each.key].object_id}"
+        Write-Host "Using object ID for service principal: ${data.azuread_service_principal.database_users[each.key].object_id}"
+        $principalObjectId = "${data.azuread_service_principal.database_users[each.key].object_id}"
 
         Write-Host "Creating temporary firewall rule for IP: $currentIp"
         az sql server firewall-rule create `

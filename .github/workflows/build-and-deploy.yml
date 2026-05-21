@@ -116,7 +116,7 @@ jobs:
         run: dotnet publish --configuration Release --no-build
 
       - name: Build Database Bundle
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         run: |
           dotnet ef migrations bundle `
             --self-contained `
@@ -127,7 +127,7 @@ jobs:
             --output efbundle
 
       - name: Upload DB Migration
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v7
         with:
           name: DatabaseMigration
@@ -135,7 +135,7 @@ jobs:
           retention-days: 1
 
       - name: Upload frontend artifact
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v7
         with:
           name: frontend
@@ -161,7 +161,7 @@ jobs:
   # Get infrastructure outputs from Terraform state
   get-infrastructure-outputs:
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     environment: production
     outputs:
       acr_login_server: ${{ steps.terraform-outputs.outputs.acr_login_server }}
@@ -218,16 +218,11 @@ jobs:
 
   deploy-database:
     runs-on: ubuntu-latest
-    needs: [build, get-infrastructure-outputs]
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    needs: [deploy-backend, get-infrastructure-outputs]
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     environment: production
 
     steps:
-      - name: Download DB Migration Bundle
-        uses: actions/download-artifact@v8
-        with:
-          name: DatabaseMigration
-
       - name: Azure Login
         uses: azure/login@v3
         with:
@@ -235,24 +230,59 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-      - name: Apply Migration
+      - name: Validate database migrations through backend readiness
         run: |
-          chmod +x efbundle
-          $env:ConnectionStrings__Database = '${{ needs.get-infrastructure-outputs.outputs.database_connection_string }}'
-          ./efbundle
-          $exitCode = $LASTEXITCODE
-          rm efbundle
-          exit $exitCode
+          $healthUrl = '${{ needs.get-infrastructure-outputs.outputs.backend_url }}/health'
+          $maxAttempts = 30
+          $delaySeconds = 10
+
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            Write-Host "Health check attempt $attempt/$maxAttempts: $healthUrl"
+            try {
+              $response = Invoke-WebRequest -Uri $healthUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
+              if ($response.StatusCode -eq 200) {
+                Write-Host "Backend is healthy. Startup migrations completed successfully."
+                exit 0
+              }
+            }
+            catch {
+              Write-Host "Backend not healthy yet: $($_.Exception.Message)"
+            }
+
+            if ($attempt -lt $maxAttempts) {
+              Start-Sleep -Seconds $delaySeconds
+            }
+          }
+
+          throw "Backend never became healthy; database migrations likely failed during startup."
 
 
   # Build and push Docker image for backend
   deploy-backend:
     runs-on: ubuntu-latest
     needs: [build, get-infrastructure-outputs]
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     environment: production
     steps:
       - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: global.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: ${{ env.FRONTEND_PROJECT_PATH }}/pnpm-lock.yaml
 
       - name: Azure Login
         uses: azure/login@v3
@@ -266,7 +296,7 @@ jobs:
           az acr login --name ${{ needs.get-infrastructure-outputs.outputs.acr_login_server }}
 
       - name: dotnet publish
-        run: dotnet publish -r linux-x64 --self-contained -t:PublishContainer -p:ContainerRegistry=${{ needs.get-infrastructure-outputs.outputs.acr_login_server }} -p:ContainerImageTags="${{ github.sha }}"
+        run: dotnet publish .\GillyTracker\GillyTracker.csproj --configuration Release -r linux-x64 --self-contained -t:PublishContainer -p:ContainerRegistry=${{ needs.get-infrastructure-outputs.outputs.acr_login_server }} -p:ContainerImageTags="${{ github.sha }}"
 
       - name: Update Container App
         run: |
@@ -279,7 +309,7 @@ jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
     needs: [build, get-infrastructure-outputs]
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     environment: production
     steps:
       - uses: actions/checkout@v6

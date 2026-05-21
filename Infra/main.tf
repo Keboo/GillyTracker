@@ -3,9 +3,13 @@ locals {
     "app" = "GillyTracker"
   }
 
+  # Exclude empty object IDs so SQL user provisioning does not run invalid CREATE USER statements.
   database_users = {
-    "GillyTracker-GitHubActions"      = var.GITHUB_ACTIONS_APP_OBJECT_ID
-    "GillyTracker-GitHubActionsInfra" = var.GITHUB_ACTIONS_INFRA_OBJECT_ID
+    for user_name, object_id in {
+      "GillyTracker-GitHubActions"      = var.GITHUB_ACTIONS_APP_OBJECT_ID
+      "GillyTracker-GitHubActionsInfra" = var.GITHUB_ACTIONS_INFRA_OBJECT_ID
+    } : user_name => trimspace(object_id)
+    if trimspace(object_id) != ""
   }
 }
 

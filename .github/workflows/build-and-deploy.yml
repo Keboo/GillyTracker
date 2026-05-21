@@ -237,7 +237,7 @@ jobs:
           $delaySeconds = 10
 
           for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-            Write-Host "Health check attempt $attempt/$maxAttempts: $healthUrl"
+            Write-Host "Health check attempt ${attempt}/${maxAttempts}: $healthUrl"
             try {
               $response = Invoke-WebRequest -Uri $healthUrl -Method Get -TimeoutSec 10 -ErrorAction Stop
               if ($response.StatusCode -eq 200) {

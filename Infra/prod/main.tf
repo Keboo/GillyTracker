@@ -7,7 +7,14 @@ locals {
   sql_server_name   = "keboodev-sql"
   sql_database_name = "keboodevdb"
 
-  database_connection_string = "Server=tcp:${data.azurerm_mssql_server.existing.fully_qualified_domain_name},1433;Initial Catalog=${data.azurerm_mssql_database.existing.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;Authentication=\"Active Directory Default\";"
+  base_database_connection_string = "Server=tcp:${data.azurerm_mssql_server.existing.fully_qualified_domain_name},1433;Initial Catalog=${data.azurerm_mssql_database.existing.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;"
+  database_connection_string      = "${local.base_database_connection_string}Authentication=\"Active Directory Default\";"
+  connection_string_no_auth       = local.base_database_connection_string
+  db_permissions = [
+    "db_datareader",
+    "db_datawriter",
+    "db_ddladmin"
+  ]
 }
 
 data "azurerm_resource_group" "resource_group" {
@@ -46,6 +53,106 @@ data "azurerm_mssql_server" "existing" {
 data "azurerm_mssql_database" "existing" {
   name      = local.sql_database_name
   server_id = data.azurerm_mssql_server.existing.id
+}
+
+resource "terraform_data" "setup_database_user" {
+  for_each = var.database_users
+
+  triggers_replace = [
+    data.azurerm_mssql_database.existing.id,
+    each.key,
+    each.value,
+    join(",", local.db_permissions),
+    "v1"
+  ]
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      try {
+        $currentIp = (Invoke-RestMethod -Uri "https://api.ipify.org").ToString()
+        $ipRuleName = 'TerraformTemp-AllowCurrentIP'
+        $azureRuleName = 'AllowAllWindowsAzureIps'
+
+        Write-Host "Installing SqlServer module..."
+        Install-Module -Name SqlServer -AcceptLicense -Force -ErrorAction SilentlyContinue
+        Import-Module SqlServer -ErrorAction Stop
+        Write-Host "SqlServer module loaded successfully"
+
+        $ErrorActionPreference = 'Stop'
+
+        Write-Host "Creating temporary firewall rule for IP: $currentIp"
+        az sql server firewall-rule create `
+          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
+          --server '${local.sql_server_name}' `
+          --name $ipRuleName `
+          --start-ip-address $currentIp `
+          --end-ip-address $currentIp `
+          --output none
+
+        Write-Host "Enabling 'Allow Azure services' firewall rule"
+        az sql server firewall-rule create `
+          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
+          --server '${local.sql_server_name}' `
+          --name $azureRuleName `
+          --start-ip-address '0.0.0.0' `
+          --end-ip-address '0.0.0.0' `
+          --output none
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to create firewall rule"
+        }
+
+        Start-Sleep -Seconds 5
+
+        $sql = @"
+        IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = '${each.key}')
+        BEGIN
+          CREATE USER [${each.key}] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '${each.value}';
+        END;
+
+        ALTER USER [${each.key}] WITH DEFAULT_SCHEMA = [dbo];
+
+        ${join("\n", [for role in local.db_permissions : "ALTER ROLE ${role} ADD MEMBER [${each.key}];"])}
+        GRANT EXECUTE TO [${each.key}];
+        "@
+
+        Write-Host "Configuring database user '${each.key}' for principal ID '${each.value}'"
+        $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
+        if ($LASTEXITCODE -ne 0 -or -not $token) {
+          throw "Failed to acquire access token for SQL database"
+        }
+
+        Invoke-Sqlcmd -ConnectionString '${local.connection_string_no_auth}' -AccessToken $token -Query $sql
+        Write-Host "Database user configured successfully"
+      }
+      catch {
+        Write-Host "ERROR: $_"
+        Write-Host $_.Exception.Message
+        Write-Host $_.ScriptStackTrace
+        throw
+      }
+      finally {
+        Write-Host "Removing temporary firewall rules"
+        $ErrorActionPreference = 'SilentlyContinue'
+        az sql server firewall-rule delete `
+          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
+          --server '${local.sql_server_name}' `
+          --name $ipRuleName `
+          --yes `
+          2>$null
+        az sql server firewall-rule delete `
+          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
+          --server '${local.sql_server_name}' `
+          --name $azureRuleName `
+          --yes `
+          2>$null
+      }
+
+      exit 0
+    EOT
+
+    interpreter = ["pwsh", "-Command"]
+  }
 }
 
 module "backend_container_app" {

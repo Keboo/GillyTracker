@@ -18,3 +18,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "database_users" {
+  description = "Map of SQL database users keyed by user name with principal object ID as value."
+  type        = map(string)
+}

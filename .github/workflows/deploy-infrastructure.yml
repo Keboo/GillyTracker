@@ -56,6 +56,8 @@ jobs:
           TF_VAR_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
           TF_VAR_TENANT_ID: ${{ secrets.ARM_TENANT_ID_INFRA }}
           TF_VAR_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
+          TF_VAR_GITHUB_ACTIONS_APP_OBJECT_ID: ${{ secrets.GITHUB_ACTIONS_APP_OBJECT_ID }}
+          TF_VAR_GITHUB_ACTIONS_INFRA_OBJECT_ID: ${{ secrets.GITHUB_ACTIONS_INFRA_OBJECT_ID }}
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v7
@@ -116,3 +118,5 @@ jobs:
           TF_VAR_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
           TF_VAR_TENANT_ID: ${{ secrets.ARM_TENANT_ID_INFRA }}
           TF_VAR_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
+          TF_VAR_GITHUB_ACTIONS_APP_OBJECT_ID: ${{ secrets.GITHUB_ACTIONS_APP_OBJECT_ID }}
+          TF_VAR_GITHUB_ACTIONS_INFRA_OBJECT_ID: ${{ secrets.GITHUB_ACTIONS_INFRA_OBJECT_ID }}

@@ -232,33 +232,21 @@ jobs:
       - name: Azure Login
         uses: azure/login@v3
         with:
-          client-id: ${{ secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.ARM_CLIENT_ID_INFRA }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID_INFRA }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
 
       - name: Apply Migration
         run: |
           chmod +x efbundle
           $env:ConnectionStrings__Database = '${{ needs.get-infrastructure-outputs.outputs.database_connection_string }}'
-          $maxAttempts = 5
-          $delaySeconds = 10
-
-          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-            Write-Host "Applying migrations attempt ${attempt}/${maxAttempts}"
-            ./efbundle
-            if ($LASTEXITCODE -eq 0) {
-              rm efbundle
-              exit 0
-            }
-
-            if ($attempt -lt $maxAttempts) {
-              Write-Host "Migration failed, retrying in ${delaySeconds}s..."
-              Start-Sleep -Seconds $delaySeconds
-            }
+          ./efbundle
+          if ($LASTEXITCODE -eq 0) {
+            rm efbundle
+            exit 0
           }
-
           rm efbundle
-          throw "Migration bundle failed after ${maxAttempts} attempts."
+          throw "Migration bundle failed."
 
 
   # Build and push Docker image for backend

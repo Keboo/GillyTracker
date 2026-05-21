@@ -23,6 +23,7 @@ defaults:
 env:
   DOTNET_VERSION: '10.0.x'
   NODE_VERSION: '22.x'
+  PNPM_VERSION: '11.1.1'
   FRONTEND_PROJECT_PATH: 'GillyTracker.Web'
   TERRAFORM_VERSION: '1.14.6'
 
@@ -42,7 +43,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 11.1.1
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -275,7 +276,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 11.1.1
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -317,7 +318,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 11.1.1
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

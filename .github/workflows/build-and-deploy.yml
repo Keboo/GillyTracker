@@ -239,11 +239,7 @@ jobs:
       - name: Apply Migration
         run: |
           chmod +x efbundle
-          $connectionString = '${{ needs.get-infrastructure-outputs.outputs.database_connection_string }}'
-          $connectionString = $connectionString -replace 'Authentication="?Active Directory Default"?;', 'Authentication=Active Directory Workload Identity;'
-          $env:ConnectionStrings__Database = $connectionString
-          $env:AZURE_CLIENT_ID = '${{ secrets.ARM_CLIENT_ID_INFRA }}'
-          $env:AZURE_TENANT_ID = '${{ secrets.ARM_TENANT_ID_INFRA }}'
+          $env:ConnectionStrings__Database = '${{ needs.get-infrastructure-outputs.outputs.database_connection_string }}'
           ./efbundle
           if ($LASTEXITCODE -eq 0) {
             rm efbundle

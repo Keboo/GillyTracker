@@ -61,13 +61,18 @@ data "azuread_service_principal" "database_users" {
   client_id = each.value
 }
 
+data "azuread_service_principal" "provisioning_principal" {
+  client_id = var.provisioning_client_id
+}
+
 resource "terraform_data" "setup_database_user" {
   triggers_replace = [
     data.azurerm_mssql_database.existing.id,
     jsonencode(var.database_users_client_ids),
+    var.provisioning_client_id,
     join(",", local.db_permissions),
     join(",", [for username in sort(keys(data.azuread_service_principal.database_users)) : "${username}:${data.azuread_service_principal.database_users[username].object_id}"]),
-    "v9"
+    "v10"
   ]
 
   provisioner "local-exec" {
@@ -99,6 +104,39 @@ resource "terraform_data" "setup_database_user" {
         }
 
         Start-Sleep -Seconds 5
+
+        $provisioningPrincipalName = '${data.azuread_service_principal.provisioning_principal.display_name}'
+        $provisioningPrincipalObjectId = '${data.azuread_service_principal.provisioning_principal.object_id}'
+
+        Write-Host "Ensuring SQL Entra admin is set to provisioning principal: $provisioningPrincipalName"
+        $currentAdminObjectId = az sql server ad-admin list `
+          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
+          --server '${local.sql_server_name}' `
+          --query "[0].sid" `
+          -o tsv `
+          --only-show-errors 2>$null
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to read current SQL Entra admin."
+        }
+
+        $currentAdminObjectId = "$currentAdminObjectId".Trim()
+        if (-not $currentAdminObjectId -or $currentAdminObjectId -ne $provisioningPrincipalObjectId) {
+          Write-Host "Setting SQL Entra admin to provisioning principal."
+          $adminOutput = az sql server ad-admin create `
+            --resource-group '${data.azurerm_resource_group.resource_group.name}' `
+            --server '${local.sql_server_name}' `
+            --display-name $provisioningPrincipalName `
+            --object-id $provisioningPrincipalObjectId `
+            --only-show-errors 2>&1
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to set SQL Entra admin. Azure CLI output: $adminOutput"
+          }
+
+          # Allow Entra admin update to propagate before attempting SQL auth.
+          Start-Sleep -Seconds 20
+        }
 
         $users = ConvertFrom-Json '${jsonencode([for username in sort(keys(data.azuread_service_principal.database_users)) : {
     name      = username

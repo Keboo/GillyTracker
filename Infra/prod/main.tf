@@ -62,32 +62,30 @@ data "azuread_service_principal" "database_users" {
 }
 
 resource "terraform_data" "setup_database_user" {
-  for_each = var.database_users_client_ids
-
   triggers_replace = [
     data.azurerm_mssql_database.existing.id,
-    each.key,
-    each.value,
+    jsonencode(var.database_users_client_ids),
     join(",", local.db_permissions),
-    "v5"
+    join(",", [for username in sort(keys(data.azuread_service_principal.database_users)) : "${username}:${data.azuread_service_principal.database_users[username].object_id}"]),
+    "v6"
   ]
 
   provisioner "local-exec" {
     command = <<-EOT
+      $ErrorActionPreference = 'Stop'
+      $logFile = if ($env:RUNNER_TEMP) { Join-Path $env:RUNNER_TEMP "setup-db-users.log" } else { Join-Path ([System.IO.Path]::GetTempPath()) "setup-db-users.log" }
+      $ipRuleName = $null
+
+      Start-Transcript -Path $logFile -Append | Out-Null
       try {
         $currentIp = (Invoke-RestMethod -Uri "https://api.ipify.org").ToString()
         $ruleSuffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
-        $ipRuleName = "TerraformTemp-${each.key}-$ruleSuffix"
+        $ipRuleName = "TerraformTemp-DbUsers-$ruleSuffix"
 
         Write-Host "Installing SqlServer module..."
         Install-Module -Name SqlServer -AcceptLicense -Force -ErrorAction SilentlyContinue
         Import-Module SqlServer -ErrorAction Stop
         Write-Host "SqlServer module loaded successfully"
-
-        $ErrorActionPreference = 'Stop'
-
-        Write-Host "Using object ID for service principal: ${data.azuread_service_principal.database_users[each.key].object_id}"
-        $principalObjectId = "${data.azuread_service_principal.database_users[each.key].object_id}"
 
         Write-Host "Creating temporary firewall rule for IP: $currentIp"
         az sql server firewall-rule create `
@@ -96,6 +94,7 @@ resource "terraform_data" "setup_database_user" {
           --name $ipRuleName `
           --start-ip-address $currentIp `
           --end-ip-address $currentIp `
+          --only-show-errors `
           --output none
 
         if ($LASTEXITCODE -ne 0) {
@@ -105,48 +104,61 @@ resource "terraform_data" "setup_database_user" {
         Start-Sleep -Seconds 5
 
         $sql = @"
-        IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = '${each.key}')
+        ${join("\n\n", [for username in sort(keys(data.azuread_service_principal.database_users)) : <<-SQL
+        IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = '${username}')
         BEGIN
-          CREATE USER [${each.key}] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '$principalObjectId';
+          CREATE USER [${username}] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '${data.azuread_service_principal.database_users[username].object_id}';
         END;
 
-        ALTER USER [${each.key}] WITH DEFAULT_SCHEMA = [dbo];
+        ALTER USER [${username}] WITH DEFAULT_SCHEMA = [dbo];
 
-        ${join("\n", [for role in local.db_permissions : "ALTER ROLE ${role} ADD MEMBER [${each.key}];"])}
-        GRANT EXECUTE TO [${each.key}];
+        ${join("\n", [for role in local.db_permissions : "ALTER ROLE ${role} ADD MEMBER [${username}];"])}
+        GRANT EXECUTE TO [${username}];
+        SQL
+])}
         "@
 
-        Write-Host "Configuring database user '${each.key}' for principal client ID '${each.value}'"
+        Write-Host "Configuring ${length(data.azuread_service_principal.database_users)} database users"
         $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
         if ($LASTEXITCODE -ne 0 -or -not $token) {
           throw "Failed to acquire access token for SQL database"
         }
 
         Invoke-Sqlcmd -ConnectionString '${local.connection_string_no_auth}' -AccessToken $token -Query $sql
-        Write-Host "Database user configured successfully"
+        Write-Host "Database users configured successfully"
       }
       catch {
         Write-Host "ERROR: $_"
         Write-Host $_.Exception.Message
         Write-Host $_.ScriptStackTrace
+        if (Test-Path $logFile) {
+          Write-Host "--- setup-db-users transcript ---"
+          Get-Content -Path $logFile
+          Write-Host "--- end transcript ---"
+        }
         throw
       }
       finally {
-        Write-Host "Removing temporary firewall rule"
         $ErrorActionPreference = 'SilentlyContinue'
-        az sql server firewall-rule delete `
-          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
-          --server '${local.sql_server_name}' `
-          --name $ipRuleName `
-          --yes `
-          2>$null
+        if ($ipRuleName) {
+          Write-Host "Removing temporary firewall rule: $ipRuleName"
+          az sql server firewall-rule delete `
+            --resource-group '${data.azurerm_resource_group.resource_group.name}' `
+            --server '${local.sql_server_name}' `
+            --name $ipRuleName `
+            --yes `
+            --only-show-errors `
+            2>$null
+        }
+
+        Stop-Transcript | Out-Null
       }
 
       exit 0
     EOT
 
-    interpreter = ["pwsh", "-Command"]
-  }
+interpreter = ["pwsh", "-Command"]
+}
 }
 
 module "backend_container_app" {

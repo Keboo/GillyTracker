@@ -16,14 +16,14 @@ variable "SUBSCRIPTION_ID" {
   default     = ""
 }
 
-variable "GITHUB_ACTIONS_APP_OBJECT_ID" {
-  description = "Object ID for the GillyTracker-GitHubActions service principal."
+variable "GITHUB_ACTIONS_APP_CLIENT_ID" {
+  description = "Client ID for the GillyTracker-GitHubActions service principal."
   type        = string
   default     = ""
 }
 
-variable "GITHUB_ACTIONS_INFRA_OBJECT_ID" {
-  description = "Object ID for the GillyTracker-GitHubActionsInfra service principal."
+variable "GITHUB_ACTIONS_INFRA_CLIENT_ID" {
+  description = "Client ID for the GillyTracker-GitHubActionsInfra service principal."
   type        = string
   default     = ""
 }

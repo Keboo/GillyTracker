@@ -36,20 +36,6 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID_INFRA }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
 
-      - name: Resolve Service Principal Object IDs
-        shell: bash
-        run: |
-          set -euo pipefail
-          app_object_id="$(az ad sp show --id '${{ secrets.ARM_CLIENT_ID }}' --query id -o tsv)"
-          infra_object_id="$(az ad sp show --id '${{ secrets.ARM_CLIENT_ID_INFRA }}' --query id -o tsv)"
-
-          if [[ -z "$app_object_id" || -z "$infra_object_id" ]]; then
-            echo "Failed to resolve one or more service principal object IDs." >&2
-            exit 1
-          fi
-
-          echo "TF_VAR_GITHUB_ACTIONS_APP_OBJECT_ID=$app_object_id" >> "$GITHUB_ENV"
-          echo "TF_VAR_GITHUB_ACTIONS_INFRA_OBJECT_ID=$infra_object_id" >> "$GITHUB_ENV"
 
       - name: Terraform Init
         working-directory: Infra
@@ -71,6 +57,8 @@ jobs:
           TF_VAR_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
           TF_VAR_TENANT_ID: ${{ secrets.ARM_TENANT_ID_INFRA }}
           TF_VAR_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
+          TF_VAR_GITHUB_ACTIONS_APP_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          TF_VAR_GITHUB_ACTIONS_INFRA_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v7
@@ -105,20 +93,6 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID_INFRA }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
 
-      - name: Resolve Service Principal Object IDs
-        shell: bash
-        run: |
-          set -euo pipefail
-          app_object_id="$(az ad sp show --id '${{ secrets.ARM_CLIENT_ID }}' --query id -o tsv)"
-          infra_object_id="$(az ad sp show --id '${{ secrets.ARM_CLIENT_ID_INFRA }}' --query id -o tsv)"
-
-          if [[ -z "$app_object_id" || -z "$infra_object_id" ]]; then
-            echo "Failed to resolve one or more service principal object IDs." >&2
-            exit 1
-          fi
-
-          echo "TF_VAR_GITHUB_ACTIONS_APP_OBJECT_ID=$app_object_id" >> "$GITHUB_ENV"
-          echo "TF_VAR_GITHUB_ACTIONS_INFRA_OBJECT_ID=$infra_object_id" >> "$GITHUB_ENV"
 
       - name: Terraform Init
         working-directory: Infra
@@ -146,3 +120,6 @@ jobs:
           TF_VAR_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
           TF_VAR_TENANT_ID: ${{ secrets.ARM_TENANT_ID_INFRA }}
           TF_VAR_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
+          TF_VAR_GITHUB_ACTIONS_APP_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          TF_VAR_GITHUB_ACTIONS_INFRA_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
+

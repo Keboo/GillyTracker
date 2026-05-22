@@ -56,14 +56,14 @@ data "azurerm_mssql_database" "existing" {
 }
 
 resource "terraform_data" "setup_database_user" {
-  for_each = var.database_users
+  for_each = var.database_users_client_ids
 
   triggers_replace = [
     data.azurerm_mssql_database.existing.id,
     each.key,
     each.value,
     join(",", local.db_permissions),
-    "v1"
+    "v2"
   ]
 
   provisioner "local-exec" {
@@ -79,6 +79,13 @@ resource "terraform_data" "setup_database_user" {
         Write-Host "SqlServer module loaded successfully"
 
         $ErrorActionPreference = 'Stop'
+
+        Write-Host "Resolving object ID for service principal client ID: ${each.value}"
+        $principalObjectId = az ad sp show --id '${each.value}' --query id -o tsv
+        if ($LASTEXITCODE -ne 0 -or -not $principalObjectId) {
+          throw "Failed to resolve object ID for service principal client ID '${each.value}'."
+        }
+        Write-Host "Resolved object ID: $principalObjectId"
 
         Write-Host "Creating temporary firewall rule for IP: $currentIp"
         az sql server firewall-rule create `
@@ -107,7 +114,7 @@ resource "terraform_data" "setup_database_user" {
         $sql = @"
         IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = '${each.key}')
         BEGIN
-          CREATE USER [${each.key}] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '${each.value}';
+          CREATE USER [${each.key}] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '$principalObjectId';
         END;
 
         ALTER USER [${each.key}] WITH DEFAULT_SCHEMA = [dbo];
@@ -116,7 +123,7 @@ resource "terraform_data" "setup_database_user" {
         GRANT EXECUTE TO [${each.key}];
         "@
 
-        Write-Host "Configuring database user '${each.key}' for principal ID '${each.value}'"
+        Write-Host "Configuring database user '${each.key}' for principal client ID '${each.value}'"
         $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
         if ($LASTEXITCODE -ne 0 -or -not $token) {
           throw "Failed to acquire access token for SQL database"

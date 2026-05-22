@@ -37,9 +37,6 @@ GillyTracker.UITests/
 ├── PageObjects/              # Page Object Model classes
 │   ├── RegisterPage.cs       # Registration page
 │   ├── LoginPage.cs          # Login page
-│   ├── MyRoomsPage.cs        # My Rooms page
-│   ├── RoomViewPage.cs       # Public room view
-│   ├── ManageRoomPage.cs     # Room management dashboard
 │   └── AccountPages.cs       # Account management pages
 ├── QAWorkflowTests.cs        # Main test suite
 ├── Test1.cs                  # Sample placeholder test
@@ -187,9 +184,7 @@ dotnet test
 
 ### Multi-Browser Testing
 
-The comprehensive workflow test uses **two browser instances** simultaneously to test real-time SignalR features:
-- Primary browser: Room owner performing management actions
-- Secondary browser: Anonymous user viewing the public room
+The UI tests exercise the public sighting report flow and account pages in an Aspire-hosted environment.
 
 ### Rate Limiting
 
@@ -201,7 +196,7 @@ Tests extract the email confirmation link directly from the registration confirm
 
 ### Test Isolation
 
-Each test uses unique email addresses and room names (timestamped) to ensure isolation and avoid conflicts.
+Each test uses unique email addresses to ensure isolation and avoid conflicts.
 
 ## Page Object Model
 

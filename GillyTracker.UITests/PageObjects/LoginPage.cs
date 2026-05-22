@@ -19,7 +19,7 @@ public class LoginPage(IPage page): TestPageBase(page)
         await PasswordInput.FillAsync(password);
         
         await LoginButton.ClickAsync();
-        await Page.WaitForURLAsync("**/my-rooms", new PageWaitForURLOptions { Timeout = 30000 });
+        await Page.WaitForURLAsync("**/", new PageWaitForURLOptions { Timeout = 30000 });
     }
     
     public async Task<bool> IsLoggedInAsync()
@@ -28,24 +28,13 @@ public class LoginPage(IPage page): TestPageBase(page)
         // or if we can find user-specific elements
         var url = Page.Url;
         
-        // If we're on my-rooms page, we're logged in
-        if (url.Contains("/my-rooms"))
+        if (!url.Contains("/login", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
-        
-        // If we're still on the login page, we're not logged in
-        if (url.Contains("/login"))
-        {
-            return false;
-        }
-        
-        // Look for various indicators that user is logged in
-        // Use Count to avoid strict mode violations
+
         var logoutButtonCount = await LogoutButton.CountAsync();
-        var myRoomsButtonCount = await Page.Locator("button:has-text('My Rooms')").CountAsync();
-        
-        return logoutButtonCount > 0 || myRoomsButtonCount > 0;
+        return logoutButtonCount > 0;
     }
     
     public async Task LogoutAsync()

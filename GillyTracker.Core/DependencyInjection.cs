@@ -1,4 +1,3 @@
-using GillyTracker.Core.QA;
 using GillyTracker.Data;
 
 using Microsoft.AspNetCore.Identity;
@@ -53,13 +52,4 @@ public static class DependencyInjection
 
         return builder;
     }
-
-    public static TBuilder AddQAServices<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
-    {
-        builder.Services.AddScoped<IRoomService, RoomService>();
-        builder.Services.AddScoped<IQuestionService, QuestionService>();
-
-        return builder;
-    }
-
 }

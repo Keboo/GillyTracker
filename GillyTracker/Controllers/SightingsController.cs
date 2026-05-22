@@ -3,13 +3,39 @@ using GillyTracker.Data;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 
 namespace GillyTracker.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SightingsController(ApplicationDbContext dbContext) : ControllerBase
+public class SightingsController(ApplicationDbContext dbContext, ILogger<SightingsController> logger) : ControllerBase
 {
+    [HttpGet]
+    public async Task<IActionResult> GetReports(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var reports = await dbContext.DogSightingReports
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedDate)
+                .Select(x => new SightingResponse(
+                    x.Id,
+                    x.Latitude,
+                    x.Longitude,
+                    x.ReporterDetails,
+                    x.CreatedDate))
+                .ToListAsync(cancellationToken);
+
+            return Ok(reports);
+        }
+        catch (DbException ex)
+        {
+            logger.LogError(ex, "Failed to query sightings list. Returning an empty list.");
+            return Ok(Array.Empty<SightingResponse>());
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateReport([FromBody] CreateSightingRequest request, CancellationToken cancellationToken)
     {

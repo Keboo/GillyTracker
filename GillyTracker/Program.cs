@@ -38,8 +38,8 @@ builder.Services.AddCors(options =>
         else
         {
             // In production, restrict to specific origins from configuration
-            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
-                ?? ["https://dogtracker.keboo.dev"];
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+                ?? ["https://dogtracker.keboo.dev", "https://www.dogtracker.keboo.dev"];
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()

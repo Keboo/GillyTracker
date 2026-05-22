@@ -234,8 +234,9 @@ module "backend_container_app" {
     AZURE_CLIENT_ID                       = azurerm_user_assigned_identity.app_identity.client_id
     ConnectionStrings__Database           = local.database_connection_string
     APPLICATIONINSIGHTS_CONNECTION_STRING = module.application_insights.application_insights.connection_string
-    # CORS: Allow the Static Web App origin
+    # CORS: Allow the Static Web App origin (default Azure hostname and custom domain)
     AllowedOrigins__0 = "https://${module.static_web_app.default_host_name}"
+    AllowedOrigins__1 = "https://dogtracker.keboo.dev"
   }
 
   depends_on = [module.static_web_app]

@@ -41,7 +41,7 @@ output "static_web_app_url" {
 
 output "backend_url" {
   description = "The URL of the backend API"
-  value       = "https://${module.backend_container_app.fqdn}"
+  value       = "https://api.dogtracker.keboo.dev"
 }
 
 output "applicationinsights_connection_string" {

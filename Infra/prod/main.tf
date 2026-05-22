@@ -142,7 +142,7 @@ resource "terraform_data" "setup_database_user" {
               $message = $_.Exception.Message
               $isTransient = $message -match "not currently available|temporarily unavailable|service is busy|timed out|timeout expired|transport-level error|error code 40613"
               if ($attempt -lt $maxAttempts -and $isTransient) {
-                Write-Host "Transient SQL error for user $userName: $message"
+                Write-Host "Transient SQL error for user ${userName}: $message"
                 Write-Host "Retrying in 15 seconds..."
                 Start-Sleep -Seconds 15
                 $attempt++

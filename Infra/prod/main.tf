@@ -67,16 +67,14 @@ resource "terraform_data" "setup_database_user" {
     jsonencode(var.database_users_client_ids),
     join(",", local.db_permissions),
     join(",", [for username in sort(keys(data.azuread_service_principal.database_users)) : "${username}:${data.azuread_service_principal.database_users[username].object_id}"]),
-    "v6"
+    "v7"
   ]
 
   provisioner "local-exec" {
     command = <<-EOT
       $ErrorActionPreference = 'Stop'
-      $logFile = if ($env:RUNNER_TEMP) { Join-Path $env:RUNNER_TEMP "setup-db-users.log" } else { Join-Path ([System.IO.Path]::GetTempPath()) "setup-db-users.log" }
       $ipRuleName = $null
 
-      Start-Transcript -Path $logFile -Append | Out-Null
       try {
         $currentIp = (Invoke-RestMethod -Uri "https://api.ipify.org").ToString()
         $ruleSuffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
@@ -88,17 +86,16 @@ resource "terraform_data" "setup_database_user" {
         Write-Host "SqlServer module loaded successfully"
 
         Write-Host "Creating temporary firewall rule for IP: $currentIp"
-        az sql server firewall-rule create `
+        $firewallOutput = az sql server firewall-rule create `
           --resource-group '${data.azurerm_resource_group.resource_group.name}' `
           --server '${local.sql_server_name}' `
           --name $ipRuleName `
           --start-ip-address $currentIp `
           --end-ip-address $currentIp `
-          --only-show-errors `
-          --output none
+          --only-show-errors 2>&1
 
         if ($LASTEXITCODE -ne 0) {
-          throw "Failed to create firewall rule"
+          throw "Failed to create firewall rule. Azure CLI output: $firewallOutput"
         }
 
         Start-Sleep -Seconds 5
@@ -119,9 +116,10 @@ resource "terraform_data" "setup_database_user" {
         "@
 
         Write-Host "Configuring ${length(data.azuread_service_principal.database_users)} database users"
-        $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
+        $tokenOutput = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv 2>&1
+        $token = "$tokenOutput".Trim()
         if ($LASTEXITCODE -ne 0 -or -not $token) {
-          throw "Failed to acquire access token for SQL database"
+          throw "Failed to acquire access token for SQL database. Azure CLI output: $tokenOutput"
         }
 
         Invoke-Sqlcmd -ConnectionString '${local.connection_string_no_auth}' -AccessToken $token -Query $sql
@@ -131,11 +129,6 @@ resource "terraform_data" "setup_database_user" {
         Write-Host "ERROR: $_"
         Write-Host $_.Exception.Message
         Write-Host $_.ScriptStackTrace
-        if (Test-Path $logFile) {
-          Write-Host "--- setup-db-users transcript ---"
-          Get-Content -Path $logFile
-          Write-Host "--- end transcript ---"
-        }
         throw
       }
       finally {
@@ -150,8 +143,6 @@ resource "terraform_data" "setup_database_user" {
             --only-show-errors `
             2>$null
         }
-
-        Stop-Transcript | Out-Null
       }
 
       exit 0

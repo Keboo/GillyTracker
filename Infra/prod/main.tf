@@ -237,7 +237,6 @@ module "backend_container_app" {
     # CORS: Allow the Static Web App origin and custom domains
     AllowedOrigins__0 = "https://${module.static_web_app.default_host_name}"
     AllowedOrigins__1 = "https://dogtracker.keboo.dev"
-    AllowedOrigins__2 = "https://www.dogtracker.keboo.dev"
   }
 
   depends_on = [module.static_web_app]

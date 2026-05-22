@@ -19,7 +19,8 @@ variable "tags" {
   default     = {}
 }
 
-variable "database_users" {
-  description = "Map of SQL database users keyed by user name with principal object ID as value."
+variable "database_users_client_ids" {
+  description = "Map of SQL database users keyed by user name with service principal client ID as value."
   type        = map(string)
+  default     = {}
 }

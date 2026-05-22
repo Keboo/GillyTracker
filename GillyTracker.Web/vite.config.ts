@@ -15,8 +15,10 @@ const backendUrl = process.env.BACKEND_URL
   || process.env.REACTAPP_BACKEND_HTTP
   || process.env.REACTAPP_BACKEND_HTTPS  
   || process.env.services__backend__http__0 
-  || process.env.services__backend__https__0 
-  || 'https://localhost:5001'
+  || process.env.services__backend__https__0
+  || ''
+
+const backendProxyTarget = backendUrl || 'https://localhost:5001'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -106,13 +108,13 @@ export default defineConfig({
     port: parseInt(process.env.PORT || '5173'),
     proxy: {
       '/api': {
-        target: backendUrl,
+        target: backendProxyTarget,
         changeOrigin: true,
         secure: false,
         cookieDomainRewrite: 'localhost',
       },
       '/hubs': {
-        target: backendUrl,
+        target: backendProxyTarget,
         changeOrigin: true,
         secure: false,
         ws: true,

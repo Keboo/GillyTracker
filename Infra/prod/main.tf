@@ -69,15 +69,14 @@ resource "terraform_data" "setup_database_user" {
     each.key,
     each.value,
     join(",", local.db_permissions),
-    "v3"
+    "v4"
   ]
 
   provisioner "local-exec" {
     command = <<-EOT
       try {
         $currentIp = (Invoke-RestMethod -Uri "https://api.ipify.org").ToString()
-        $ipRuleName = 'TerraformTemp-AllowCurrentIP'
-        $azureRuleName = 'AllowAllWindowsAzureIps'
+        $ipRuleName = 'TerraformTemp-AllowCurrentIP-${each.key}'
 
         Write-Host "Installing SqlServer module..."
         Install-Module -Name SqlServer -AcceptLicense -Force -ErrorAction SilentlyContinue
@@ -96,15 +95,6 @@ resource "terraform_data" "setup_database_user" {
           --name $ipRuleName `
           --start-ip-address $currentIp `
           --end-ip-address $currentIp `
-          --output none
-
-        Write-Host "Enabling 'Allow Azure services' firewall rule"
-        az sql server firewall-rule create `
-          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
-          --server '${local.sql_server_name}' `
-          --name $azureRuleName `
-          --start-ip-address '0.0.0.0' `
-          --end-ip-address '0.0.0.0' `
           --output none
 
         if ($LASTEXITCODE -ne 0) {
@@ -141,18 +131,12 @@ resource "terraform_data" "setup_database_user" {
         throw
       }
       finally {
-        Write-Host "Removing temporary firewall rules"
+        Write-Host "Removing temporary firewall rule"
         $ErrorActionPreference = 'SilentlyContinue'
         az sql server firewall-rule delete `
           --resource-group '${data.azurerm_resource_group.resource_group.name}' `
           --server '${local.sql_server_name}' `
           --name $ipRuleName `
-          --yes `
-          2>$null
-        az sql server firewall-rule delete `
-          --resource-group '${data.azurerm_resource_group.resource_group.name}' `
-          --server '${local.sql_server_name}' `
-          --name $azureRuleName `
           --yes `
           2>$null
       }

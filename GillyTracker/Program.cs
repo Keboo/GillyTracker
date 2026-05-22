@@ -1,21 +1,13 @@
 using GillyTracker.Core;
-using GillyTracker.Core.Hubs;
 using GillyTracker.Data;
 using GillyTracker.Middleware;
 
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults()
-    .AddDatabase()
-    .AddQAServices();
-
-// Add HTTP context accessor for SignalR authentication
-builder.Services.AddHttpContextAccessor();
+    .AddDatabase();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -48,18 +40,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add authorization policies
-builder.Services.AddAuthorization(options =>
-{
-    // Policy that allows both cookie and JWT authentication for SignalR
-    options.AddPolicy("SignalRPolicy", policy =>
-    {
-        policy.AddAuthenticationSchemes(
-            IdentityConstants.ApplicationScheme, 
-            JwtBearerDefaults.AuthenticationScheme);
-        policy.RequireAssertion(_ => true); // Always allow
-    });
-});
+builder.Services.AddAuthorization();
 
 var authBuilder = builder.Services.AddAuthentication(options =>
 {
@@ -87,50 +68,6 @@ authBuilder.AddIdentityCookies(options =>
         }
     });
 });
-
-authBuilder.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = "GillyTracker",
-        ValidAudience = "GillyTracker",
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["SignalR:SigningKey"] 
-                ?? "GillyTracker-SignalR-Signing-Key-Min-32-Chars-Long!"))
-    };
-
-    // For SignalR, read the token from the query string
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            var accessToken = context.Request.Query["access_token"];
-            if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
-            {
-                context.Token = accessToken;
-            }
-            return Task.CompletedTask;
-        },
-        OnAuthenticationFailed = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning("JWT authentication failed: {Exception}", context.Exception.Message);
-            return Task.CompletedTask;
-        },
-        OnChallenge = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning("JWT authentication challenge: {Error} - {ErrorDescription}", context.Error, context.ErrorDescription);
-            return Task.CompletedTask;
-        }
-    };
-});
-
-builder.Services.AddSignalR();
 
 // No-op email sender for now (can be replaced with real implementation)
 builder.Services.AddScoped<IEmailSender<ApplicationUser>>(sp => 
@@ -173,11 +110,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// SignalR hub uses JWT authentication when token present, allows anonymous otherwise
-// Method-level [Authorize] enforces authentication for owner operations
-app.MapHub<RoomHub>("/hubs/room")
-    .RequireAuthorization("SignalRPolicy");
 
 // SPA fallback for production
 if (!app.Environment.IsDevelopment())

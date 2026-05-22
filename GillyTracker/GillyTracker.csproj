@@ -13,8 +13,10 @@
     <ProjectReference Include="..\GillyTracker.Data\GillyTracker.Data.csproj" />
     <ProjectReference Include="..\GillyTracker.ServiceDefaults\GillyTracker.ServiceDefaults.csproj" />
     <ProjectReference Include="..\GillyTracker.Web\GillyTracker.Web.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>

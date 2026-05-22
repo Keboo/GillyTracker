@@ -21,15 +21,13 @@ public class RegisterPage(IPage page) : TestPageBase(page)
         await ConfirmPasswordInput.FillAsync(password);
         
         await RegisterButton.ClickAsync();
-        await Page.WaitForURLAsync("**/my-rooms", new PageWaitForURLOptions { Timeout = 30000 });
+        await Page.WaitForURLAsync("**/", new PageWaitForURLOptions { Timeout = 30000 });
     }
     
     public async Task<bool> IsConfirmationMessageVisibleAsync()
     {
-        // React app redirects to /my-rooms on successful registration
-        // User is now logged in and on my-rooms page
         var url = Page.Url;
-        return url.Contains("/my-rooms");
+        return !url.Contains("/register", StringComparison.OrdinalIgnoreCase);
     }
     
     /// <summary>

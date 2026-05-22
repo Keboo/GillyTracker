@@ -24,8 +24,7 @@ public abstract class AuthedUserTestBase : UITestBase
             var registerPage = new RegisterPage(page);
             await registerPage.NavigateAsync(FrontendBaseUri);
             await registerPage.RegisterAsync(Username, Password);
-            // Note: In React app, registration automatically logs in the user
-            // and redirects to /my-rooms, so no separate login step is needed
+            // Registration automatically logs in the user, so no separate login step is needed.
 
             AuthStateId = await SaveStateAsync(context);
         }

@@ -55,6 +55,12 @@ data "azurerm_mssql_database" "existing" {
   server_id = data.azurerm_mssql_server.existing.id
 }
 
+data "azurerm_service_principal" "database_users" {
+  for_each = var.database_users_client_ids
+
+  application_id = each.value
+}
+
 resource "terraform_data" "setup_database_user" {
   for_each = var.database_users_client_ids
 
@@ -63,7 +69,7 @@ resource "terraform_data" "setup_database_user" {
     each.key,
     each.value,
     join(",", local.db_permissions),
-    "v2"
+    "v3"
   ]
 
   provisioner "local-exec" {
@@ -80,12 +86,8 @@ resource "terraform_data" "setup_database_user" {
 
         $ErrorActionPreference = 'Stop'
 
-        Write-Host "Resolving object ID for service principal client ID: ${each.value}"
-        $principalObjectId = az ad sp show --id '${each.value}' --query id -o tsv
-        if ($LASTEXITCODE -ne 0 -or -not $principalObjectId) {
-          throw "Failed to resolve object ID for service principal client ID '${each.value}'."
-        }
-        Write-Host "Resolved object ID: $principalObjectId"
+        Write-Host "Using object ID for service principal: ${data.azurerm_service_principal.database_users[each.key].object_id}"
+        $principalObjectId = "${data.azurerm_service_principal.database_users[each.key].object_id}"
 
         Write-Host "Creating temporary firewall rule for IP: $currentIp"
         az sql server firewall-rule create `

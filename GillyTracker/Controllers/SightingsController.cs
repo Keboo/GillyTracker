@@ -10,6 +10,23 @@ namespace GillyTracker.Controllers;
 [Route("api/[controller]")]
 public class SightingsController(ApplicationDbContext dbContext) : ControllerBase
 {
+    [HttpGet]
+    public async Task<IActionResult> GetReports(CancellationToken cancellationToken)
+    {
+        var reports = await dbContext.DogSightingReports
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedDate)
+            .Select(x => new SightingResponse(
+                x.Id,
+                x.Latitude,
+                x.Longitude,
+                x.ReporterDetails,
+                x.CreatedDate))
+            .ToListAsync(cancellationToken);
+
+        return Ok(reports);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateReport([FromBody] CreateSightingRequest request, CancellationToken cancellationToken)
     {

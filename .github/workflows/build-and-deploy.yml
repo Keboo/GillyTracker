@@ -236,41 +236,6 @@ jobs:
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
 
-      - name: Ensure Migration Principal Has DB Access
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $connectionString = '${{ needs.get-infrastructure-outputs.outputs.database_connection_string }}'
-          $connectionStringNoAuth = $connectionString -replace 'Authentication="?Active Directory Default"?;?', ''
-          $clientId = '${{ secrets.ARM_CLIENT_ID }}'
-
-          $principalObjectId = az ad sp show --id $clientId --query id -o tsv
-          if ($LASTEXITCODE -ne 0 -or -not $principalObjectId) {
-            throw "Failed to resolve service principal object ID for client ID '$clientId'."
-          }
-
-          Install-Module -Name SqlServer -AcceptLicense -Force -ErrorAction SilentlyContinue
-          Import-Module SqlServer -ErrorAction Stop
-
-          $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv
-          if ($LASTEXITCODE -ne 0 -or -not $token) {
-            throw "Failed to acquire access token for SQL database."
-          }
-
-          $sql = @"
-          IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'GillyTracker-GitHubActions')
-          BEGIN
-            CREATE USER [GillyTracker-GitHubActions] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '$principalObjectId';
-          END;
-
-          ALTER USER [GillyTracker-GitHubActions] WITH DEFAULT_SCHEMA = [dbo];
-          ALTER ROLE db_datareader ADD MEMBER [GillyTracker-GitHubActions];
-          ALTER ROLE db_datawriter ADD MEMBER [GillyTracker-GitHubActions];
-          ALTER ROLE db_ddladmin ADD MEMBER [GillyTracker-GitHubActions];
-          GRANT EXECUTE TO [GillyTracker-GitHubActions];
-          "@
-
-          Invoke-Sqlcmd -ConnectionString $connectionStringNoAuth -AccessToken $token -Query $sql
-
       - name: Apply Migration
         run: |
           chmod +x efbundle

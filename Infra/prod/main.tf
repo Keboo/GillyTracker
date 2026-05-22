@@ -67,7 +67,7 @@ resource "terraform_data" "setup_database_user" {
     jsonencode(var.database_users_client_ids),
     join(",", local.db_permissions),
     join(",", [for username in sort(keys(data.azuread_service_principal.database_users)) : "${username}:${data.azuread_service_principal.database_users[username].object_id}"]),
-    "v8"
+    "v9"
   ]
 
   provisioner "local-exec" {
@@ -130,8 +130,28 @@ resource "terraform_data" "setup_database_user" {
           $queryParts += "GRANT EXECUTE TO [$userName];"
           $sql = $queryParts -join " "
 
-          Write-Host "Applying SQL permissions for user: $userName"
-          Invoke-Sqlcmd -ConnectionString '${local.connection_string_no_auth}' -AccessToken $token -Query $sql
+          $maxAttempts = 8
+          $attempt = 1
+          while ($true) {
+            try {
+              Write-Host "Applying SQL permissions for user: $userName (attempt $attempt/$maxAttempts)"
+              Invoke-Sqlcmd -ConnectionString '${local.connection_string_no_auth}' -AccessToken $token -Query $sql
+              break
+            }
+            catch {
+              $message = $_.Exception.Message
+              $isTransient = $message -match "not currently available|temporarily unavailable|service is busy|timed out|timeout expired|transport-level error|error code 40613"
+              if ($attempt -lt $maxAttempts -and $isTransient) {
+                Write-Host "Transient SQL error for user $userName: $message"
+                Write-Host "Retrying in 15 seconds..."
+                Start-Sleep -Seconds 15
+                $attempt++
+                continue
+              }
+
+              throw
+            }
+          }
         }
 
         Write-Host "Database users configured successfully"

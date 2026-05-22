@@ -18,4 +18,5 @@ module "prod" {
   tags                         = local.default_tags
   existing_resource_group_name = var.existing_resource_group_name
   database_users_client_ids    = local.database_users_client_ids
+  provisioning_client_id       = var.GITHUB_ACTIONS_INFRA_CLIENT_ID
 }

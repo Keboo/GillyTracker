@@ -24,3 +24,8 @@ variable "database_users_client_ids" {
   type        = map(string)
   default     = {}
 }
+
+variable "provisioning_client_id" {
+  description = "Client ID of the service principal that runs Terraform apply and provisions DB users."
+  type        = string
+}

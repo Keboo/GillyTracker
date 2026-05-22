@@ -69,14 +69,15 @@ resource "terraform_data" "setup_database_user" {
     each.key,
     each.value,
     join(",", local.db_permissions),
-    "v4"
+    "v5"
   ]
 
   provisioner "local-exec" {
     command = <<-EOT
       try {
         $currentIp = (Invoke-RestMethod -Uri "https://api.ipify.org").ToString()
-        $ipRuleName = 'TerraformTemp-AllowCurrentIP-${each.key}'
+        $ruleSuffix = [Guid]::NewGuid().ToString('N').Substring(0, 8)
+        $ipRuleName = "TerraformTemp-${each.key}-$ruleSuffix"
 
         Write-Host "Installing SqlServer module..."
         Install-Module -Name SqlServer -AcceptLicense -Force -ErrorAction SilentlyContinue

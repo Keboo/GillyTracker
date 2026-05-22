@@ -67,7 +67,7 @@ resource "terraform_data" "setup_database_user" {
     jsonencode(var.database_users_client_ids),
     join(",", local.db_permissions),
     join(",", [for username in sort(keys(data.azuread_service_principal.database_users)) : "${username}:${data.azuread_service_principal.database_users[username].object_id}"]),
-    "v7"
+    "v8"
   ]
 
   provisioner "local-exec" {
@@ -100,29 +100,40 @@ resource "terraform_data" "setup_database_user" {
 
         Start-Sleep -Seconds 5
 
-        $sql = @"
-        ${join("\n\n", [for username in sort(keys(data.azuread_service_principal.database_users)) : <<-SQL
-        IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = '${username}')
-        BEGIN
-          CREATE USER [${username}] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '${data.azuread_service_principal.database_users[username].object_id}';
-        END;
+        $users = ConvertFrom-Json '${jsonencode([for username in sort(keys(data.azuread_service_principal.database_users)) : {
+    name      = username
+    object_id = data.azuread_service_principal.database_users[username].object_id
+}])}'
 
-        ALTER USER [${username}] WITH DEFAULT_SCHEMA = [dbo];
+        $roles = ConvertFrom-Json '${jsonencode(local.db_permissions)}'
 
-        ${join("\n", [for role in local.db_permissions : "ALTER ROLE ${role} ADD MEMBER [${username}];"])}
-        GRANT EXECUTE TO [${username}];
-        SQL
-])}
-        "@
-
-        Write-Host "Configuring ${length(data.azuread_service_principal.database_users)} database users"
+        Write-Host "Configuring $($users.Count) database users"
         $tokenOutput = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv 2>&1
         $token = "$tokenOutput".Trim()
         if ($LASTEXITCODE -ne 0 -or -not $token) {
           throw "Failed to acquire access token for SQL database. Azure CLI output: $tokenOutput"
         }
 
-        Invoke-Sqlcmd -ConnectionString '${local.connection_string_no_auth}' -AccessToken $token -Query $sql
+        foreach ($user in $users) {
+          $userName = $user.name
+          $objectId = $user.object_id
+
+          $queryParts = @(
+            "IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = '$userName') BEGIN CREATE USER [$userName] FROM EXTERNAL PROVIDER WITH OBJECT_ID = '$objectId'; END;",
+            "ALTER USER [$userName] WITH DEFAULT_SCHEMA = [dbo];"
+          )
+
+          foreach ($role in $roles) {
+            $queryParts += "IF NOT EXISTS (SELECT 1 FROM sys.database_role_members drm JOIN sys.database_principals r ON drm.role_principal_id = r.principal_id JOIN sys.database_principals m ON drm.member_principal_id = m.principal_id WHERE r.name = '$role' AND m.name = '$userName') BEGIN ALTER ROLE [$role] ADD MEMBER [$userName]; END;"
+          }
+
+          $queryParts += "GRANT EXECUTE TO [$userName];"
+          $sql = $queryParts -join " "
+
+          Write-Host "Applying SQL permissions for user: $userName"
+          Invoke-Sqlcmd -ConnectionString '${local.connection_string_no_auth}' -AccessToken $token -Query $sql
+        }
+
         Write-Host "Database users configured successfully"
       }
       catch {

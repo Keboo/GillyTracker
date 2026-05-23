@@ -56,7 +56,8 @@ public class SightingsController(ApplicationDbContext dbContext, ILogger<Sightin
         {
             Latitude = request.Latitude,
             Longitude = request.Longitude,
-            ReporterDetails = request.Details?.Trim()
+            ReporterDetails = request.Details?.Trim(),
+            CreatedDate = DateTimeOffset.UtcNow
         };
 
         dbContext.DogSightingReports.Add(report);

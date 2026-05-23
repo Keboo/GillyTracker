@@ -1,0 +1,5 @@
+{
+  "appHost": {
+    "path": "GillyTracker.AppHost/GillyTracker.AppHost.csproj"
+  }
+}

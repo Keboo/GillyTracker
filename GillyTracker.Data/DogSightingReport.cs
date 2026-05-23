@@ -16,5 +16,5 @@ public class DogSightingReport
     [MaxLength(2000)]
     public string? ReporterDetails { get; set; }
 
-    public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset CreatedDate { get; set; }
 }

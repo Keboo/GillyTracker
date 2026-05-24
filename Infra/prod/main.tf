@@ -59,6 +59,8 @@ resource "azurerm_role_assignment" "app_identity_key_vault_secrets_user" {
 }
 
 resource "azurerm_role_assignment" "current_principal_key_vault_secrets_officer" {
+  count = data.azurerm_client_config.current.object_id == data.azuread_service_principal.provisioning_principal.object_id ? 0 : 1
+
   scope                = azurerm_key_vault.app.id
   role_definition_name = "Key Vault Secrets Officer"
   principal_id         = data.azurerm_client_config.current.object_id

@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { initTelemetry } from './services/telemetry'
+import 'leaflet/dist/leaflet.css'
 import './index.css'
 
 initTelemetry()

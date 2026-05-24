@@ -1,11 +1,62 @@
-import { FormEvent, useEffect, useState } from 'react'
+import type { LatLngTuple } from 'leaflet'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import { apiClient } from './services/apiClient'
 
 type SubmitState = 'idle' | 'saving' | 'saved' | 'failed'
+type Coordinates = { latitude: number; longitude: number }
+
+const defaultMapCenter: LatLngTuple = [0, 0]
+const defaultMapZoom = 2
+const selectedMapZoom = 16
+
+const isLatitudeInRange = (value: number) => value >= -90 && value <= 90
+const isLongitudeInRange = (value: number) => value >= -180 && value <= 180
+
+const parseCoordinates = (latitudeValue: string, longitudeValue: string): Coordinates | null => {
+  const parsedLatitude = Number(latitudeValue)
+  const parsedLongitude = Number(longitudeValue)
+
+  if (!Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
+    return null
+  }
+
+  if (!isLatitudeInRange(parsedLatitude) || !isLongitudeInRange(parsedLongitude)) {
+    return null
+  }
+
+  return {
+    latitude: parsedLatitude,
+    longitude: parsedLongitude,
+  }
+}
+
+const formatCoordinate = (value: number) => value.toFixed(7)
+
+function MapClickHandler({ onPick }: { onPick: (latitude: number, longitude: number) => void }) {
+  useMapEvents({
+    click(event) {
+      onPick(event.latlng.lat, event.latlng.lng)
+    },
+  })
+
+  return null
+}
+
+function RecenterMap({ center, zoom }: { center: LatLngTuple; zoom: number }) {
+  const map = useMap()
+
+  useEffect(() => {
+    map.setView(center, zoom, { animate: false })
+  }, [center, map, zoom])
+
+  return null
+}
 
 function App() {
   const [latitude, setLatitude] = useState<string>('')
   const [longitude, setLongitude] = useState<string>('')
+  const [selectedCoordinates, setSelectedCoordinates] = useState<Coordinates | null>(null)
   const [details, setDetails] = useState<string>('')
   const [locationMessage, setLocationMessage] = useState<string>(() =>
     navigator.geolocation
@@ -22,8 +73,12 @@ function App() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLatitude(position.coords.latitude.toFixed(7))
-        setLongitude(position.coords.longitude.toFixed(7))
+        const detectedLatitude = position.coords.latitude
+        const detectedLongitude = position.coords.longitude
+
+        setLatitude(formatCoordinate(detectedLatitude))
+        setLongitude(formatCoordinate(detectedLongitude))
+        setSelectedCoordinates({ latitude: detectedLatitude, longitude: detectedLongitude })
         setLocationMessage('Location found. Please confirm or edit before submitting.')
       },
       () => {
@@ -33,22 +88,54 @@ function App() {
     )
   }, [])
 
+  const updateCoordinatesFromInputs = (nextLatitude: string, nextLongitude: string) => {
+    const parsedCoordinates = parseCoordinates(nextLatitude, nextLongitude)
+
+    if (parsedCoordinates) {
+      setSelectedCoordinates(parsedCoordinates)
+    }
+  }
+
+  const handleLatitudeChange = (value: string) => {
+    setLatitude(value)
+    updateCoordinatesFromInputs(value, longitude)
+  }
+
+  const handleLongitudeChange = (value: string) => {
+    setLongitude(value)
+    updateCoordinatesFromInputs(latitude, value)
+  }
+
+  const handleMapPick = (nextLatitude: number, nextLongitude: number) => {
+    setLatitude(formatCoordinate(nextLatitude))
+    setLongitude(formatCoordinate(nextLongitude))
+    setSelectedCoordinates({ latitude: nextLatitude, longitude: nextLongitude })
+    setLocationMessage('Location selected on map. You can click again or edit coordinates manually.')
+  }
+
+  const mapCenter = useMemo<LatLngTuple>(
+    () =>
+      selectedCoordinates
+        ? [selectedCoordinates.latitude, selectedCoordinates.longitude]
+        : defaultMapCenter,
+    [selectedCoordinates],
+  )
+  const mapZoom = selectedCoordinates ? selectedMapZoom : defaultMapZoom
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSubmitState('saving')
     setSubmitMessage('')
 
     try {
-      const parsedLatitude = Number(latitude)
-      const parsedLongitude = Number(longitude)
-
-      if (Number.isNaN(parsedLatitude) || Number.isNaN(parsedLongitude)) {
+      const parsedCoordinates = parseCoordinates(latitude, longitude)
+      if (!parsedCoordinates) {
         throw new Error('Latitude and longitude must be valid numbers.')
       }
 
       await apiClient.post('/api/sightings', {
-        latitude: parsedLatitude,
-        longitude: parsedLongitude,
+        latitude: parsedCoordinates.latitude,
+        longitude: parsedCoordinates.longitude,
         details,
       })
 
@@ -75,6 +162,24 @@ function App() {
           <p className="hint">{locationMessage}</p>
         </div>
       </section>
+      <section className="map-section" aria-label="Location map">
+        <p className="map-hint">Click the map to choose the location, or type latitude and longitude manually.</p>
+        <MapContainer center={mapCenter} zoom={mapZoom} scrollWheelZoom className="location-map">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapClickHandler onPick={handleMapPick} />
+          <RecenterMap center={mapCenter} zoom={mapZoom} />
+          {selectedCoordinates && (
+            <CircleMarker
+              center={[selectedCoordinates.latitude, selectedCoordinates.longitude]}
+              radius={8}
+              pathOptions={{ color: '#0f766e', fillColor: '#14b8a6', fillOpacity: 0.85 }}
+            />
+          )}
+        </MapContainer>
+      </section>
       <form onSubmit={submit} className="report-form">
         <label>
           Latitude
@@ -82,7 +187,7 @@ function App() {
             type="number"
             step="any"
             value={latitude}
-            onChange={(event) => setLatitude(event.target.value)}
+            onChange={(event) => handleLatitudeChange(event.target.value)}
             required
           />
         </label>
@@ -92,7 +197,7 @@ function App() {
             type="number"
             step="any"
             value={longitude}
-            onChange={(event) => setLongitude(event.target.value)}
+            onChange={(event) => handleLongitudeChange(event.target.value)}
             required
           />
         </label>

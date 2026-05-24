@@ -211,10 +211,23 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// SPA fallback for production
+// SPA route handling for production
 if (!app.Environment.IsDevelopment())
 {
-    app.MapFallbackToFile("index.html");
+    var spaIndexFilePath = Path.Combine(app.Environment.WebRootPath, "index.html");
+    var spaRoutes = new[]
+    {
+        "/",
+        "/login",
+        "/admin/sightings"
+    };
+
+    foreach (var route in spaRoutes)
+    {
+        app.MapGet(route, () => Results.File(spaIndexFilePath, "text/html"));
+    }
+
+    app.MapFallback(() => Results.LocalRedirect("/"));
 }
 
 app.Run();

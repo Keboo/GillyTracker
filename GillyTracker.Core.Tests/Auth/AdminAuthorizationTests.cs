@@ -48,4 +48,30 @@ public class AdminAuthorizationTests
 
         await Assert.That(result).IsFalse();
     }
+
+    [Test]
+    public async Task ReturnsTrueWhenMatchingGroupsClaimExistsWithWsFederationClaimType()
+    {
+        var identity = new ClaimsIdentity(
+            [new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/groups", "group-123")],
+            authenticationType: "Test");
+        var principal = new ClaimsPrincipal(identity);
+
+        var result = AdminAuthorization.IsPetTrackerAdmin(principal, "group-123");
+
+        await Assert.That(result).IsTrue();
+    }
+
+    [Test]
+    public async Task ReturnsTrueWhenMatchingGroupsClaimExistsWithMicrosoftClaimType()
+    {
+        var identity = new ClaimsIdentity(
+            [new Claim("http://schemas.microsoft.com/claims/groups", "group-123")],
+            authenticationType: "Test");
+        var principal = new ClaimsPrincipal(identity);
+
+        var result = AdminAuthorization.IsPetTrackerAdmin(principal, "group-123");
+
+        await Assert.That(result).IsTrue();
+    }
 }

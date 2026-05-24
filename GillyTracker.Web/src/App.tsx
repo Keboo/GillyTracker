@@ -63,8 +63,18 @@ function App() {
 
   return (
     <main className="app-shell">
-      <h1>Report Gilly’s Location</h1>
-      <p className="hint">{locationMessage}</p>
+      <section className="hero" aria-labelledby="home-hero-heading">
+        <img
+          className="hero-image"
+          src="/gilly-home.jpg"
+          alt="Gilly lying down and looking at the camera."
+        />
+        <div className="hero-copy">
+          <h1 id="home-hero-heading">Report Gilly’s Location</h1>
+          <p className="hero-text">Meet Gilly so you know who to watch for while reporting sightings.</p>
+          <p className="hint">{locationMessage}</p>
+        </div>
+      </section>
       <form onSubmit={submit} className="report-form">
         <label>
           Latitude

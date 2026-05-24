@@ -5,7 +5,7 @@ Single-page app for reporting Gilly's location.
 ## What it does
 
 - Attempts to collect reporter geolocation when the page loads
-- Falls back to manual latitude/longitude entry if location access is unavailable
+- Falls back to map selection if location access is unavailable
 - Lets the reporter submit contact details/notes
 - Stores reports in SQL table `GillyTracker.DogSightingReports`
 - Provides an admin-only sightings page at `/admin/sightings`

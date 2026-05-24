@@ -13,6 +13,21 @@ output "resource_group_name" {
   value       = module.prod.resource_group_name
 }
 
+output "key_vault_name" {
+  description = "The name of the Azure Key Vault"
+  value       = module.prod.key_vault_name
+}
+
+output "key_vault_uri" {
+  description = "The URI of the Azure Key Vault"
+  value       = module.prod.key_vault_uri
+}
+
+output "entra_backend_client_id" {
+  description = "The client ID for the backend Microsoft Entra app registration"
+  value       = module.prod.entra_backend_client_id
+}
+
 output "static_web_app_name" {
   description = "The name of the static web app"
   value       = module.prod.static_web_app_name

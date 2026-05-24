@@ -1,6 +1,8 @@
+using GillyTracker.Core.Auth;
 using GillyTracker.Core.Sightings;
 using GillyTracker.Data;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
@@ -12,6 +14,7 @@ namespace GillyTracker.Controllers;
 public class SightingsController(ApplicationDbContext dbContext, ILogger<SightingsController> logger) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AdminAccessSettings.PolicyName)]
     public async Task<IActionResult> GetReports(CancellationToken cancellationToken)
     {
         try
@@ -72,6 +75,7 @@ public class SightingsController(ApplicationDbContext dbContext, ILogger<Sightin
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AdminAccessSettings.PolicyName)]
     public async Task<IActionResult> GetReport(Guid id, CancellationToken cancellationToken)
     {
         var report = await dbContext.DogSightingReports
@@ -86,6 +90,23 @@ public class SightingsController(ApplicationDbContext dbContext, ILogger<Sightin
             .SingleOrDefaultAsync(cancellationToken);
 
         return report is null ? NotFound() : Ok(report);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AdminAccessSettings.PolicyName)]
+    public async Task<IActionResult> DeleteReport(Guid id, CancellationToken cancellationToken)
+    {
+        var report = await dbContext.DogSightingReports
+            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (report is null)
+        {
+            return NotFound();
+        }
+
+        dbContext.DogSightingReports.Remove(report);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
     }
 }
 

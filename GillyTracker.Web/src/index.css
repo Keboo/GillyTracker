@@ -18,6 +18,47 @@ code {
   box-sizing: border-box;
 }
 
+.site-header {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.site-header-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.site-header nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.site-header nav a {
+  color: #e2e8f0;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.site-header nav a:hover {
+  text-decoration: underline;
+}
+
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.signed-in-as {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
 .app-shell {
   max-width: 760px;
   margin: 0 auto;
@@ -98,6 +139,9 @@ code {
 }
 
 .report-form button {
+.auth-actions button,
+.microsoft-login-button,
+.danger-button {
   border: none;
   border-radius: 0.5rem;
   padding: 0.7rem 1rem;
@@ -109,8 +153,38 @@ code {
 }
 
 .report-form button:disabled {
+.auth-actions button:disabled,
+.microsoft-login-button:disabled,
+.danger-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.danger-button {
+  background: #b91c1c;
+}
+
+.sightings-table-wrapper {
+  overflow-x: auto;
+}
+
+.sightings-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+}
+
+.sightings-table th,
+.sightings-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.sightings-table th {
+  background: #f1f5f9;
 }
 
 .success {

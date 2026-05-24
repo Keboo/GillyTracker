@@ -1,8 +1,12 @@
 using GillyTracker.Core;
+using GillyTracker.Core.Auth;
 using GillyTracker.Data;
 using GillyTracker.Middleware;
 
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,7 +44,19 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddAuthorization();
+var petTrackerAdminsGroupObjectId = builder.Configuration["Authorization:PetTrackerAdminsGroupObjectId"]?.Trim();
+
+builder.Services.AddSingleton(new AdminAccessSettings(petTrackerAdminsGroupObjectId ?? ""));
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AdminAccessSettings.PolicyName, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+            AdminAuthorization.IsPetTrackerAdmin(context.User, petTrackerAdminsGroupObjectId));
+    });
+});
 
 var authBuilder = builder.Services.AddAuthentication(options =>
 {
@@ -66,8 +82,92 @@ authBuilder.AddIdentityCookies(options =>
             // SameSite=None would be blocked by iOS Safari's ITP.
             cookieOptions.Cookie.SameSite = SameSiteMode.Lax;
         }
+
+        cookieOptions.Events.OnRedirectToLogin = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+
+        cookieOptions.Events.OnRedirectToAccessDenied = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
     });
 });
+
+var microsoftTenantId = builder.Configuration["Authentication:Microsoft:TenantId"]?.Trim();
+var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"]?.Trim();
+var microsoftClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"]?.Trim();
+var microsoftCallbackPath = builder.Configuration["Authentication:Microsoft:CallbackPath"]?.Trim();
+
+if (!string.IsNullOrWhiteSpace(microsoftTenantId) &&
+    !string.IsNullOrWhiteSpace(microsoftClientId) &&
+    !string.IsNullOrWhiteSpace(microsoftClientSecret))
+{
+    if (string.IsNullOrWhiteSpace(microsoftCallbackPath))
+    {
+        microsoftCallbackPath = "/signin-microsoft";
+    }
+    else if (!microsoftCallbackPath.StartsWith('/'))
+    {
+        microsoftCallbackPath = $"/{microsoftCallbackPath}";
+    }
+
+    authBuilder.AddOpenIdConnect(AdminAccessSettings.MicrosoftAuthenticationScheme, options =>
+    {
+        options.SignInScheme = IdentityConstants.ApplicationScheme;
+        options.Authority = $"https://login.microsoftonline.com/{microsoftTenantId}/v2.0";
+        options.ClientId = microsoftClientId;
+        options.ClientSecret = microsoftClientSecret;
+        options.CallbackPath = microsoftCallbackPath;
+        options.ResponseType = "code";
+        options.UsePkce = true;
+        options.SaveTokens = false;
+        options.GetClaimsFromUserInfoEndpoint = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            NameClaimType = "name"
+        };
+
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+
+        options.Events = new OpenIdConnectEvents
+        {
+            OnTokenValidated = context =>
+            {
+                if (!AdminAuthorization.IsPetTrackerAdmin(context.Principal, petTrackerAdminsGroupObjectId))
+                {
+                    context.Fail("Your account is not in the PetTrackerAdmins group.");
+                }
+
+                return Task.CompletedTask;
+            },
+            OnRemoteFailure = context =>
+            {
+                context.Response.Redirect("/login?error=auth_failed");
+                context.HandleResponse();
+                return Task.CompletedTask;
+            }
+        };
+    });
+}
 
 // No-op email sender for now (can be replaced with real implementation)
 builder.Services.AddScoped<IEmailSender<ApplicationUser>>(sp => 

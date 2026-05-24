@@ -1,5 +1,9 @@
+using System.Security.Claims;
+
+using GillyTracker.Core.Auth;
 using GillyTracker.Data;
 
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,64 +14,36 @@ namespace GillyTracker.Controllers;
 [Route("api/[controller]")]
 public class AuthController(
     SignInManager<ApplicationUser> signInManager,
-    UserManager<ApplicationUser> userManager) : ControllerBase
+    UserManager<ApplicationUser> userManager,
+    IAuthenticationSchemeProvider authenticationSchemeProvider,
+    AdminAccessSettings adminAccessSettings) : ControllerBase
 {
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    [HttpGet("microsoft/login")]
+    public async Task<IActionResult> MicrosoftLogin([FromQuery] string? returnUrl = "/admin/sightings")
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
-        if (user is null)
+        AuthenticationScheme? microsoftScheme =
+            await authenticationSchemeProvider.GetSchemeAsync(AdminAccessSettings.MicrosoftAuthenticationScheme);
+
+        if (microsoftScheme is null)
         {
-            return Unauthorized(new { message = "Invalid email or password" });
+            return Problem(
+                detail: "Microsoft Entra authentication is not configured on this environment.",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
         }
 
-        var result = await signInManager.PasswordSignInAsync(
-            user,
-            request.Password,
-            request.RememberMe ?? false,
-            lockoutOnFailure: false);
+        string safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        string callbackUrl = Url.Action(nameof(MicrosoftCallback), values: new { returnUrl = safeReturnUrl })
+            ?? $"/api/auth/microsoft/callback?returnUrl={Uri.EscapeDataString(safeReturnUrl)}";
 
-        if (result.Succeeded)
-        {
-            return Ok(new UserInfo
-            {
-                UserId = user.Id,
-                UserName = user.UserName ?? "",
-                Email = user.Email ?? "",
-                IsAuthenticated = true
-            });
-        }
-
-        return Unauthorized(new { message = "Invalid email or password" });
+        return Challenge(
+            new AuthenticationProperties { RedirectUri = callbackUrl },
+            AdminAccessSettings.MicrosoftAuthenticationScheme);
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    [HttpGet("microsoft/callback")]
+    public IActionResult MicrosoftCallback([FromQuery] string? returnUrl = "/admin/sightings")
     {
-        var user = new ApplicationUser { UserName = request.Email, Email = request.Email };
-        var result = await userManager.CreateAsync(user, request.Password);
-
-        if (result.Succeeded)
-        {
-            // Automatically verify the email. 
-            // TODO: Implement email verification
-            string token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-            result = await userManager.ConfirmEmailAsync(user, token);
-
-            if (result.Succeeded)
-            {
-                await signInManager.SignInAsync(user, isPersistent: false);
-                return Ok(new UserInfo
-                {
-                    UserId = user.Id,
-                    UserName = user.UserName ?? "",
-                    Email = user.Email ?? "",
-                    IsAuthenticated = true
-                });
-            }
-        }
-
-        return BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+        return LocalRedirect(GetSafeReturnUrl(returnUrl));
     }
 
     [HttpPost("logout")]
@@ -89,19 +65,29 @@ public class AuthController(
         return Ok(new UserInfo
         {
             UserId = userManager.GetUserId(User) ?? "",
-            UserName = User.Identity?.Name ?? "",
-            Email = User.Identity?.Name ?? "",
-            IsAuthenticated = true
+            UserName = User.Identity?.Name ?? userManager.GetUserName(User) ?? "",
+            Email = userManager.GetUserName(User) ?? User.FindFirstValue(ClaimTypes.Email) ?? "",
+            IsAuthenticated = true,
+            IsAdmin = AdminAuthorization.IsPetTrackerAdmin(User, adminAccessSettings.PetTrackerAdminsGroupObjectId)
         });
+    }
+
+    private string GetSafeReturnUrl(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return "/admin/sightings";
+        }
+
+        return Url.IsLocalUrl(returnUrl) ? returnUrl : "/";
     }
 }
 
-public record LoginRequest(string Email, string Password, bool? RememberMe);
-public record RegisterRequest(string Email, string Password, string ConfirmPassword);
 public record UserInfo
 {
     public string UserId { get; init; } = "";
     public string UserName { get; init; } = "";
     public string Email { get; init; } = "";
     public bool IsAuthenticated { get; init; }
+    public bool IsAdmin { get; init; }
 }

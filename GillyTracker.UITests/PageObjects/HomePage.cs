@@ -5,8 +5,8 @@ namespace GillyTracker.UITests.PageObjects;
 public class HomePage(IPage page) : TestPageBase(page)
 {
     private ILocator Heading => Page.GetByRole(AriaRole.Heading, new() { NameRegex = new Regex(@"Report Gilly.?s Location") });
-    private ILocator LatitudeInput => Page.GetByLabel("Latitude");
-    private ILocator LongitudeInput => Page.GetByLabel("Longitude");
+    private ILocator LocationMap => Page.Locator(".location-map");
+    private ILocator CoordinatePills => Page.Locator(".coordinate-pill");
     private ILocator DetailsInput => Page.GetByLabel("Contact details or notes");
     private ILocator SubmitButton => Page.GetByRole(AriaRole.Button, new() { Name = "Send report" });
 
@@ -18,24 +18,21 @@ public class HomePage(IPage page) : TestPageBase(page)
         await SubmitButton.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
     }
 
-    public async Task FillReportFormAsync(string latitude, string longitude, string details)
+    public async Task FillReportFormAsync(string details)
     {
-        await LatitudeInput.FillAsync(latitude);
-        await LongitudeInput.FillAsync(longitude);
         await DetailsInput.FillAsync(details);
     }
     
     public async Task AssertFormIsVisibleAsync()
     {
-        await LatitudeInput.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
-        await LongitudeInput.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await LocationMap.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await CoordinatePills.First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
         await DetailsInput.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
     }
 
-    public async Task AssertFormValuesAsync(string latitude, string longitude, string details)
+    public async Task AssertFormValuesAsync(string details)
     {
-        await Assertions.Expect(LatitudeInput).ToHaveValueAsync(latitude);
-        await Assertions.Expect(LongitudeInput).ToHaveValueAsync(longitude);
+        await Assertions.Expect(CoordinatePills).ToHaveCountAsync(2);
         await Assertions.Expect(DetailsInput).ToHaveValueAsync(details);
     }
 }

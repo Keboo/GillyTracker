@@ -1,7 +1,10 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { Marker as LeafletMarker } from 'leaflet'
+import { Icon, type Marker as LeafletMarker } from 'leaflet'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import { apiClient } from '@/services/apiClient'
+import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
+import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
 type SubmitState = 'idle' | 'saving' | 'saved' | 'failed'
 type Coordinates = [number, number]
@@ -9,6 +12,16 @@ type Coordinates = [number, number]
 const defaultMapCenter: Coordinates = [39.8283, -98.5795]
 const defaultMapZoom = 4
 const detectedLocationZoom = 16
+const markerIcon = new Icon({
+  iconUrl: markerIconUrl,
+  iconRetinaUrl: markerIconRetinaUrl,
+  shadowUrl: markerShadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41],
+})
 
 function MapRecenter({ center, zoom }: { center: Coordinates, zoom: number }) {
   const map = useMap()
@@ -140,6 +153,7 @@ export default function ReportSighting() {
                     setSelectedCoordinates(point.lat, point.lng)
                   },
                 }}
+                icon={markerIcon}
                 position={markerPosition}
                 ref={markerRef}
               />

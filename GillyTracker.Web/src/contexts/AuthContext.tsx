@@ -1,12 +1,11 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { UserInfo, LoginRequest, RegisterRequest } from '@/types'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { UserInfo } from '@/types'
 import { apiClient } from '@/services/apiClient'
 
 interface AuthContextType {
   user: UserInfo | null
   loading: boolean
-  login: (credentials: LoginRequest) => Promise<void>
-  register: (data: RegisterRequest) => Promise<void>
+  beginMicrosoftLogin: (returnUrl?: string) => void
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -17,21 +16,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const userData = await apiClient.get<UserInfo>('/api/auth/user')
-        setUser(userData)
-      } catch {
-        setUser(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-    void initializeAuth()
-  }, [])
-
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const userData = await apiClient.get<UserInfo>('/api/auth/user')
       setUser(userData)
@@ -40,16 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const login = async (credentials: LoginRequest) => {
-    const userData = await apiClient.post<UserInfo>('/api/auth/login', credentials)
-    setUser(userData)
-  }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- bootstrap auth state from server session
+    void refreshUser()
+  }, [refreshUser])
 
-  const register = async (data: RegisterRequest) => {
-    const userData = await apiClient.post<UserInfo>('/api/auth/register', data)
-    setUser(userData)
+  const beginMicrosoftLogin = (returnUrl = '/admin/sightings') => {
+    const target = `/api/auth/microsoft/login?returnUrl=${encodeURIComponent(returnUrl)}`
+    window.location.assign(target)
   }
 
   const logout = async () => {
@@ -58,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, beginMicrosoftLogin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

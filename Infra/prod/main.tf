@@ -10,6 +10,7 @@ locals {
   base_database_connection_string = "Server=tcp:${data.azurerm_mssql_server.existing.fully_qualified_domain_name},1433;Initial Catalog=${data.azurerm_mssql_database.existing.name};Encrypt=True;TrustServerCertificate=False;Connection Timeout=120;"
   database_connection_string      = "${local.base_database_connection_string}Authentication=\"Active Directory Default\";"
   connection_string_no_auth       = local.base_database_connection_string
+  key_vault_name                  = "gilly${lower(local.environment)}${random_string.key_vault_suffix.result}kv"
   db_permissions = [
     "db_datareader",
     "db_datawriter",
@@ -21,12 +22,52 @@ data "azurerm_resource_group" "resource_group" {
   name = var.existing_resource_group_name
 }
 
+data "azurerm_client_config" "current" {}
+
+resource "random_string" "key_vault_suffix" {
+  length  = 5
+  special = false
+  upper   = false
+}
+
+resource "azurerm_key_vault" "app" {
+  name                          = local.key_vault_name
+  location                      = data.azurerm_resource_group.resource_group.location
+  resource_group_name           = data.azurerm_resource_group.resource_group.name
+  tenant_id                     = data.azurerm_client_config.current.tenant_id
+  sku_name                      = "standard"
+  rbac_authorization_enabled    = true
+  soft_delete_retention_days    = 90
+  purge_protection_enabled      = true
+  public_network_access_enabled = true
+
+  tags = local.tags
+}
+
 resource "azurerm_user_assigned_identity" "app_identity" {
   name                = "gillytracker-${lower(local.environment)}-mi"
   location            = data.azurerm_resource_group.resource_group.location
   resource_group_name = data.azurerm_resource_group.resource_group.name
 
   tags = local.tags
+}
+
+resource "azurerm_role_assignment" "app_identity_key_vault_secrets_user" {
+  scope                = azurerm_key_vault.app.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.app_identity.principal_id
+}
+
+resource "azurerm_role_assignment" "current_principal_key_vault_secrets_officer" {
+  scope                = azurerm_key_vault.app.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+resource "azurerm_role_assignment" "provisioning_principal_key_vault_secrets_officer" {
+  scope                = azurerm_key_vault.app.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azuread_service_principal.provisioning_principal.object_id
 }
 
 data "azurerm_container_app_environment" "existing" {
@@ -63,6 +104,73 @@ data "azuread_service_principal" "database_users" {
 
 data "azuread_service_principal" "provisioning_principal" {
   client_id = var.provisioning_client_id
+}
+
+data "azuread_group" "pet_tracker_admins" {
+  display_name = "PetTrackerAdmins"
+}
+
+resource "azuread_application" "backend_auth" {
+  display_name             = "gillytracker-${lower(local.environment)}-backend-auth"
+  sign_in_audience         = "AzureADMyOrg"
+  group_membership_claims  = ["SecurityGroup"]
+
+  web {
+    redirect_uris = ["https://api.dogtracker.keboo.dev/signin-microsoft"]
+  }
+}
+
+resource "azuread_service_principal" "backend_auth" {
+  client_id = azuread_application.backend_auth.client_id
+}
+
+resource "azuread_application_password" "backend_auth" {
+  application_id = azuread_application.backend_auth.id
+  display_name   = "terraform-generated-client-secret"
+}
+
+resource "azurerm_key_vault_secret" "microsoft_tenant_id" {
+  name         = "Authentication--Microsoft--TenantId"
+  value        = data.azurerm_client_config.current.tenant_id
+  key_vault_id = azurerm_key_vault.app.id
+
+  depends_on = [
+    azurerm_role_assignment.current_principal_key_vault_secrets_officer,
+    azurerm_role_assignment.provisioning_principal_key_vault_secrets_officer
+  ]
+}
+
+resource "azurerm_key_vault_secret" "microsoft_client_id" {
+  name         = "Authentication--Microsoft--ClientId"
+  value        = azuread_application.backend_auth.client_id
+  key_vault_id = azurerm_key_vault.app.id
+
+  depends_on = [
+    azurerm_role_assignment.current_principal_key_vault_secrets_officer,
+    azurerm_role_assignment.provisioning_principal_key_vault_secrets_officer
+  ]
+}
+
+resource "azurerm_key_vault_secret" "microsoft_client_secret" {
+  name         = "Authentication--Microsoft--ClientSecret"
+  value        = azuread_application_password.backend_auth.value
+  key_vault_id = azurerm_key_vault.app.id
+
+  depends_on = [
+    azurerm_role_assignment.current_principal_key_vault_secrets_officer,
+    azurerm_role_assignment.provisioning_principal_key_vault_secrets_officer
+  ]
+}
+
+resource "azurerm_key_vault_secret" "pet_tracker_admins_group_object_id" {
+  name         = "Authorization--PetTrackerAdminsGroupObjectId"
+  value        = data.azuread_group.pet_tracker_admins.object_id
+  key_vault_id = azurerm_key_vault.app.id
+
+  depends_on = [
+    azurerm_role_assignment.current_principal_key_vault_secrets_officer,
+    azurerm_role_assignment.provisioning_principal_key_vault_secrets_officer
+  ]
 }
 
 resource "terraform_data" "setup_database_user" {

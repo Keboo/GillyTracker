@@ -17,6 +17,21 @@ output "resource_group_name" {
   value       = data.azurerm_resource_group.resource_group.name
 }
 
+output "key_vault_name" {
+  description = "The name of the Azure Key Vault"
+  value       = azurerm_key_vault.app.name
+}
+
+output "key_vault_uri" {
+  description = "The URI of the Azure Key Vault"
+  value       = azurerm_key_vault.app.vault_uri
+}
+
+output "entra_backend_client_id" {
+  description = "The client ID for the backend Microsoft Entra app registration"
+  value       = azuread_application.backend_auth.client_id
+}
+
 output "database_connection_string" {
   description = "The connection string for the SQL database"
   value       = local.database_connection_string

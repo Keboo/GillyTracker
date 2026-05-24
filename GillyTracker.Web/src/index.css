@@ -29,6 +29,23 @@ code {
   color: #334155;
 }
 
+.map-section {
+  margin-bottom: 1rem;
+}
+
+.map-hint {
+  margin: 0 0 0.5rem;
+  color: #334155;
+}
+
+.location-map {
+  height: 320px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
 .report-form {
   display: flex;
   flex-direction: column;
@@ -79,4 +96,10 @@ code {
 .error {
   margin: 0;
   color: #b91c1c;
+}
+
+@media (max-width: 640px) {
+  .location-map {
+    height: 260px;
+  }
 }

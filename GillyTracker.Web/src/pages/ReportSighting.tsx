@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type Marker as LeafletMarker } from 'leaflet'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { Button } from '@mui/material'
 import { apiClient } from '@/services/apiClient'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
@@ -180,9 +181,9 @@ export default function ReportSighting() {
             placeholder="How can I reach you? Where is Gilly now?"
           />
         </label>
-        <button type="submit" disabled={submitState === 'saving'}>
+        <Button type="submit" variant="contained" size="large" disabled={submitState === 'saving'}>
           {submitState === 'saving' ? 'Sending...' : 'Send report'}
-        </button>
+        </Button>
         {submitMessage && <p className={submitState === 'failed' ? 'error' : 'success'}>{submitMessage}</p>}
       </form>
     </main>

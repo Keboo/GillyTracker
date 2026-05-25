@@ -162,7 +162,6 @@ code {
   font: inherit;
 }
 
-.report-form button {
 .auth-actions button,
 .microsoft-login-button,
 .danger-button {
@@ -176,7 +175,6 @@ code {
   cursor: pointer;
 }
 
-.report-form button:disabled {
 .auth-actions button:disabled,
 .microsoft-login-button:disabled,
 .danger-button:disabled {

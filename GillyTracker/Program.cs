@@ -120,7 +120,7 @@ if (!string.IsNullOrWhiteSpace(microsoftTenantId) &&
 {
     if (string.IsNullOrWhiteSpace(microsoftCallbackPath))
     {
-        microsoftCallbackPath = "/signin-microsoft";
+        microsoftCallbackPath = "/api/auth/microsoft/callback";
     }
     else if (!microsoftCallbackPath.StartsWith('/'))
     {

@@ -117,6 +117,21 @@ code {
   margin-top: 0.5rem;
 }
 
+.location-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.map-status {
+  margin: 0.5rem 0 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
 .coordinate-pill {
   display: inline-flex;
   align-items: center;

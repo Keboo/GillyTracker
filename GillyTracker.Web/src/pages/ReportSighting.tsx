@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type Marker as LeafletMarker } from 'leaflet'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
-import { Button } from '@mui/material'
+import { Button, CircularProgress } from '@mui/material'
 import { apiClient } from '@/services/apiClient'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
@@ -50,9 +50,10 @@ export default function ReportSighting() {
   const [details, setDetails] = useState<string>('')
   const [mapCenter, setMapCenter] = useState<Coordinates>(defaultMapCenter)
   const [mapZoom, setMapZoom] = useState<number>(defaultMapZoom)
+  const [isLocating, setIsLocating] = useState<boolean>(() => Boolean(navigator.geolocation))
   const [locationMessage, setLocationMessage] = useState<string>(() =>
     navigator.geolocation
-      ? 'Trying to read your location...'
+      ? ''
       : 'Location services are unavailable on this device. Tap the map to set coordinates.',
   )
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
@@ -88,9 +89,11 @@ export default function ReportSighting() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setSelectedCoordinates(position.coords.latitude, position.coords.longitude, { zoom: detectedLocationZoom })
+        setIsLocating(false)
         setLocationMessage('Location found. Drag the marker or tap the map to adjust before submitting.')
       },
       () => {
+        setIsLocating(false)
         setLocationMessage('Could not read location. Tap the map to set coordinates manually.')
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -125,7 +128,6 @@ export default function ReportSighting() {
   return (
     <main className="app-shell">
       <h1>Report Gilly&apos;s Location</h1>
-      <p className="hint">{locationMessage}</p>
       <form onSubmit={submit} className="report-form">
         <section className="map-section" aria-label="Location map section">
           <p className="map-hint">Tap anywhere on the map to pick the sighting location.</p>
@@ -170,6 +172,13 @@ export default function ReportSighting() {
               {longitude === null ? 'Not set' : longitude.toFixed(7)}
             </span>
           </div>
+          {isLocating && (
+            <div className="location-loading" role="status" aria-live="polite">
+              <CircularProgress size={16} aria-label="Reading your location" />
+              <span>Reading your location...</span>
+            </div>
+          )}
+          {!isLocating && locationMessage && <p className="map-status">{locationMessage}</p>}
         </section>
         <label>
           Contact details or notes

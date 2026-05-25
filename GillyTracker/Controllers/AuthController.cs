@@ -74,12 +74,32 @@ public class AuthController(
 
     private string GetSafeReturnUrl(string? returnUrl)
     {
+        const string defaultReturnUrl = "/admin/sightings";
+
         if (string.IsNullOrWhiteSpace(returnUrl))
         {
-            return "/admin/sightings";
+            return defaultReturnUrl;
         }
 
-        return Url.IsLocalUrl(returnUrl) ? returnUrl : "/";
+        if (Url.IsLocalUrl(returnUrl))
+        {
+            return returnUrl;
+        }
+
+        if (Uri.TryCreate(returnUrl, UriKind.Absolute, out Uri? absoluteReturnUrl))
+        {
+            bool isSameHost = string.Equals(
+                absoluteReturnUrl.Host,
+                HttpContext.Request.Host.Host,
+                StringComparison.OrdinalIgnoreCase);
+
+            if (isSameHost && Url.IsLocalUrl(absoluteReturnUrl.PathAndQuery))
+            {
+                return absoluteReturnUrl.PathAndQuery;
+            }
+        }
+
+        return defaultReturnUrl;
     }
 }
 

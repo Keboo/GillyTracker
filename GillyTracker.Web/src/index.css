@@ -323,9 +323,19 @@ code {
   margin-bottom: 1rem;
 }
 
-.detail-back-button.MuiButton-root {
-  text-transform: none;
-  padding-inline: 0.3rem;
+.detail-back-button.MuiIconButton-root {
+  color: #0f172a;
+  font-size: 2rem;
+  padding: 0.25rem;
+}
+
+.detail-back-button.MuiIconButton-root:hover {
+  background: rgb(15 23 42 / 12%);
+}
+
+.detail-back-button.MuiIconButton-root:focus-visible {
+  outline: 2px solid #1e293b;
+  outline-offset: 2px;
 }
 
 .detail-header h1 {

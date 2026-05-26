@@ -61,9 +61,12 @@ public class AuthController(
             string missingSettingsDetail = missingSettings.Count > 0
                 ? $" Missing required settings: {string.Join(", ", missingSettings)}."
                 : string.Empty;
+            string exceptionDetail = string.IsNullOrWhiteSpace(ex.Message)
+                ? ex.GetType().Name
+                : $"{ex.GetType().Name}: {ex.Message}";
 
             return Problem(
-                detail: $"Microsoft Entra authentication is not configured on this environment.{missingSettingsDetail} {ex.Message}",
+                detail: $"Microsoft Entra authentication is not configured on this environment.{missingSettingsDetail} {exceptionDetail}",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }

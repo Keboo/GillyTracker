@@ -129,11 +129,13 @@ jobs:
 
       - name: Upload DB Migration
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v7
+        uses: Keboo/sa-upload@v1
         with:
-          name: DatabaseMigration
+          name: efbundle
           path: 'efbundle'
-          retention-days: 1
+          storage-account: keboogithub
+          container-name: gillytracker
+          create-container: true
 
       - name: Upload frontend artifact
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
@@ -225,9 +227,11 @@ jobs:
 
     steps:
       - name: Download DB Migration Bundle
-        uses: actions/download-artifact@v8
+        uses: Keboo/sa-download@v1
         with:
-          name: DatabaseMigration
+          name: efbundle
+          storage-account: keboogithub
+          container-name: gillytracker
 
       - name: Azure Login
         uses: azure/login@v3
@@ -339,4 +343,3 @@ jobs:
           app_location: '${{ env.FRONTEND_PROJECT_PATH }}/dist'
           skip_app_build: true
           skip_api_build: true
-

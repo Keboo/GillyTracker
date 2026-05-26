@@ -222,14 +222,14 @@ export default function ReportSighting() {
           {submitState === 'saving' ? 'Sending...' : 'Send report'}
         </Button>
         {submitMessage && <p className={submitState === 'failed' ? 'error' : 'success'}>{submitMessage}</p>}
+        <figure className="home-footer-image-wrap">
+          <img
+            className="home-footer-image"
+            src="/gilly-home.jpg"
+            alt="Gilly lying down and looking at the camera."
+          />
+        </figure>
       </form>
-      <figure className="home-footer-image-wrap">
-        <img
-          className="home-footer-image"
-          src="/gilly-home.jpg"
-          alt="Gilly lying down and looking at the camera."
-        />
-      </figure>
     </main>
   )
 }

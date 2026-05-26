@@ -291,8 +291,74 @@ code {
   }
 }
 
+.sightings-table-row {
+  cursor: pointer;
+}
+
+.sightings-table-row:hover td {
+  background: #f1f5f9;
+}
+
+.sightings-table-actions {
+  width: 2.5rem;
+  text-align: center !important;
+}
+
+.delete-icon-button.MuiIconButton-root {
+  color: #b91c1c;
+}
+
+.delete-icon-button.MuiIconButton-root:hover {
+  background: rgb(185 28 28 / 8%);
+}
+
+.delete-icon-button.MuiIconButton-root:disabled {
+  color: #94a3b8;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-header h1 {
+  margin: 0;
+}
+
+.sighting-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.detail-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.detail-fields dt {
+  font-weight: 600;
+  color: #475569;
+}
+
+.detail-fields dd {
+  margin: 0;
+}
+
+.detail-map {
+  height: 420px;
+}
+
 @media (max-width: 640px) {
-  .location-map {
-    height: 260px;
+  .detail-map {
+    height: 300px;
   }
 }

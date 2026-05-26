@@ -61,11 +61,13 @@ jobs:
           TF_VAR_GITHUB_ACTIONS_INFRA_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
 
       - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v7
+        uses: Keboo/sa-upload@v1
         with:
           name: tfplan
           path: Infra/tfplan
-          retention-days: 1
+          storage-account: keboogithub
+          container-name: gillytracker
+          create-container: true
 
   apply:
     runs-on: ubuntu-latest
@@ -104,9 +106,11 @@ jobs:
           ARM_USE_OIDC: true
 
       - name: Download Terraform Plan
-        uses: actions/download-artifact@v8
+        uses: Keboo/sa-download@v1
         with:
           name: tfplan
+          storage-account: keboogithub
+          container-name: gillytracker
           path: Infra
 
       - name: Terraform Apply
@@ -122,4 +126,3 @@ jobs:
           TF_VAR_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID_INFRA }}
           TF_VAR_GITHUB_ACTIONS_APP_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
           TF_VAR_GITHUB_ACTIONS_INFRA_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID_INFRA }}
-

@@ -26,7 +26,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      includeAssets: ['icon.png', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'GillyTracker',
         short_name: 'GillyTracker',

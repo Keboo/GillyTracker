@@ -16,7 +16,8 @@ public class AuthController(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
     IAuthenticationSchemeProvider authenticationSchemeProvider,
-    AdminAccessSettings adminAccessSettings) : ControllerBase
+    AdminAccessSettings adminAccessSettings,
+    IConfiguration configuration) : ControllerBase
 {
     [HttpGet("microsoft/login")]
     public async Task<IActionResult> MicrosoftLogin([FromQuery] string? returnUrl = "/admin/sightings")
@@ -26,8 +27,37 @@ public class AuthController(
 
         if (microsoftScheme is null)
         {
+            var missingSettings = new List<string>();
+            if (string.IsNullOrWhiteSpace(GetConfigValue(
+                "Authentication:Microsoft:TenantId",
+                "Authentication__Microsoft__TenantId",
+                "Authentication--Microsoft--TenantId")))
+            {
+                missingSettings.Add("TenantId");
+            }
+
+            if (string.IsNullOrWhiteSpace(GetConfigValue(
+                "Authentication:Microsoft:ClientId",
+                "Authentication__Microsoft__ClientId",
+                "Authentication--Microsoft--ClientId")))
+            {
+                missingSettings.Add("ClientId");
+            }
+
+            if (string.IsNullOrWhiteSpace(GetConfigValue(
+                "Authentication:Microsoft:ClientSecret",
+                "Authentication__Microsoft__ClientSecret",
+                "Authentication--Microsoft--ClientSecret")))
+            {
+                missingSettings.Add("ClientSecret");
+            }
+
+            string missingSettingsDetail = missingSettings.Count > 0
+                ? $" Missing required settings: {string.Join(", ", missingSettings)}."
+                : string.Empty;
+
             return Problem(
-                detail: "Microsoft Entra authentication is not configured on this environment.",
+                detail: $"Microsoft Entra authentication is not configured on this environment.{missingSettingsDetail}",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
 
@@ -100,6 +130,20 @@ public class AuthController(
         }
 
         return defaultReturnUrl;
+    }
+
+    private string? GetConfigValue(params string[] keys)
+    {
+        foreach (string key in keys)
+        {
+            string? value = configuration[key];
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value.Trim();
+            }
+        }
+
+        return null;
     }
 }
 

@@ -11,6 +11,8 @@
     <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.3.5" />
     <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.3.5" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.3.5" />
+    <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
     <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.11.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />

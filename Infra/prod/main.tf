@@ -113,9 +113,9 @@ data "azuread_group" "pet_tracker_admins" {
 }
 
 resource "azuread_application" "backend_auth" {
-  display_name             = "gillytracker-${lower(local.environment)}-backend-auth"
-  sign_in_audience         = "AzureADMyOrg"
-  group_membership_claims  = ["SecurityGroup"]
+  display_name            = "gillytracker-${lower(local.environment)}-backend-auth"
+  sign_in_audience        = "AzureADMyOrg"
+  group_membership_claims = ["SecurityGroup"]
 
   web {
     redirect_uris = ["https://api.dogtracker.keboo.dev/signin-microsoft"]
@@ -342,6 +342,7 @@ module "backend_container_app" {
 
   env_vars = {
     AZURE_CLIENT_ID                       = azurerm_user_assigned_identity.app_identity.client_id
+    KeyVault__VaultUri                    = azurerm_key_vault.app.vault_uri
     ConnectionStrings__Database           = local.database_connection_string
     APPLICATIONINSIGHTS_CONNECTION_STRING = module.application_insights.application_insights.connection_string
     # CORS: Allow the Static Web App origin and custom domains

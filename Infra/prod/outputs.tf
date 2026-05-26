@@ -56,7 +56,7 @@ output "static_web_app_url" {
 
 output "backend_url" {
   description = "The URL of the backend API"
-  value       = "https://${module.backend_container_app.fqdn}"
+  value       = "https://${local.backend_container_app_fqdn}"
 }
 
 output "applicationinsights_connection_string" {

@@ -41,6 +41,7 @@ Terraform is configured to use existing Azure resources:
 - Container App Environment: `keboodev-env`
 - SQL Server and database are discovered via Terraform data sources in the existing resource group
 - Frontend hosting is provisioned as an Azure Static Web App, and backend CORS allows that origin
+- Frontend production builds use Terraform `backend_url`, which resolves to the container app FQDN
 - The deploy-infrastructure workflow expects repository secrets `GITHUB_ACTIONS_APP_OBJECT_ID` and `GITHUB_ACTIONS_INFRA_OBJECT_ID` for database user principal IDs
 
 ### Key Vault and Entra secrets

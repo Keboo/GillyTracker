@@ -127,6 +127,14 @@ jobs:
             --startup-project .\GillyTracker.AppHost\GillyTracker.AppHost.csproj `
             --output efbundle
 
+      - name: Azure Login
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
       - name: Upload DB Migration
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: Keboo/sa-upload@v1
@@ -226,19 +234,19 @@ jobs:
     environment: production
 
     steps:
-      - name: Download DB Migration Bundle
-        uses: Keboo/sa-download@v1
-        with:
-          name: efbundle
-          storage-account: keboogithub
-          container-name: gillytracker
-
       - name: Azure Login
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.ARM_CLIENT_ID }}
           tenant-id: ${{ secrets.ARM_TENANT_ID }}
           subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+      - name: Download DB Migration Bundle
+        uses: Keboo/sa-download@v1
+        with:
+          name: efbundle
+          storage-account: keboogithub
+          container-name: gillytracker
 
       - name: Apply Migration
         run: |

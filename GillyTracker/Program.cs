@@ -16,7 +16,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults()
     .AddDatabase();
 
-string? keyVaultUri = builder.Configuration["KeyVault:VaultUri"]?.Trim();
+string? keyVaultUri = GetConfigValue(
+    builder.Configuration,
+    "KeyVault:VaultUri",
+    "KeyVault__VaultUri",
+    "KeyVault--VaultUri");
 if (Uri.TryCreate(keyVaultUri, UriKind.Absolute, out Uri? parsedKeyVaultUri))
 {
     builder.Configuration.AddAzureKeyVault(
@@ -55,7 +59,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-var petTrackerAdminsGroupObjectId = builder.Configuration["Authorization:PetTrackerAdminsGroupObjectId"]?.Trim();
+string? petTrackerAdminsGroupObjectId = GetConfigValue(
+    builder.Configuration,
+    "Authorization:PetTrackerAdminsGroupObjectId",
+    "Authorization__PetTrackerAdminsGroupObjectId",
+    "Authorization--PetTrackerAdminsGroupObjectId");
 
 builder.Services.AddSingleton(new AdminAccessSettings(petTrackerAdminsGroupObjectId ?? ""));
 
@@ -120,10 +128,26 @@ authBuilder.AddIdentityCookies(options =>
     });
 });
 
-var microsoftTenantId = builder.Configuration["Authentication:Microsoft:TenantId"]?.Trim();
-var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"]?.Trim();
-var microsoftClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"]?.Trim();
-var microsoftCallbackPath = builder.Configuration["Authentication:Microsoft:CallbackPath"]?.Trim();
+string? microsoftTenantId = GetConfigValue(
+    builder.Configuration,
+    "Authentication:Microsoft:TenantId",
+    "Authentication__Microsoft__TenantId",
+    "Authentication--Microsoft--TenantId");
+string? microsoftClientId = GetConfigValue(
+    builder.Configuration,
+    "Authentication:Microsoft:ClientId",
+    "Authentication__Microsoft__ClientId",
+    "Authentication--Microsoft--ClientId");
+string? microsoftClientSecret = GetConfigValue(
+    builder.Configuration,
+    "Authentication:Microsoft:ClientSecret",
+    "Authentication__Microsoft__ClientSecret",
+    "Authentication--Microsoft--ClientSecret");
+string? microsoftCallbackPath = GetConfigValue(
+    builder.Configuration,
+    "Authentication:Microsoft:CallbackPath",
+    "Authentication__Microsoft__CallbackPath",
+    "Authentication--Microsoft--CallbackPath");
 
 if (!string.IsNullOrWhiteSpace(microsoftTenantId) &&
     !string.IsNullOrWhiteSpace(microsoftClientId) &&
@@ -242,6 +266,20 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+static string? GetConfigValue(IConfiguration configuration, params string[] keys)
+{
+    foreach (string key in keys)
+    {
+        string? value = configuration[key];
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            return value.Trim();
+        }
+    }
+
+    return null;
+}
 
 // Simple no-op email sender
 internal class NoOpEmailSender<TUser> : IEmailSender<TUser> where TUser : class

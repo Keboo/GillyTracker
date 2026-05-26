@@ -279,7 +279,10 @@ app.MapControllers();
 // SPA route handling for production
 if (!app.Environment.IsDevelopment())
 {
-    var spaIndexFilePath = Path.Combine(app.Environment.WebRootPath, "index.html");
+    string? webRootPath = app.Environment.WebRootPath;
+    string? spaIndexFilePath = string.IsNullOrWhiteSpace(webRootPath)
+        ? null
+        : Path.Combine(webRootPath, "index.html");
     var spaRoutes = new[]
     {
         "/",
@@ -287,12 +290,15 @@ if (!app.Environment.IsDevelopment())
         "/admin/sightings"
     };
 
-    foreach (var route in spaRoutes)
+    if (!string.IsNullOrWhiteSpace(spaIndexFilePath) && File.Exists(spaIndexFilePath))
     {
-        app.MapGet(route, () => Results.File(spaIndexFilePath, "text/html"));
-    }
+        foreach (var route in spaRoutes)
+        {
+            app.MapGet(route, () => Results.File(spaIndexFilePath, "text/html"));
+        }
 
-    app.MapFallback(() => Results.LocalRedirect("/"));
+        app.MapFallback(() => Results.LocalRedirect("/"));
+    }
 }
 
 app.Run();

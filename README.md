@@ -50,6 +50,8 @@ Terraform also creates the backend Entra app registration and writes these Key V
 - `Authentication--Microsoft--ClientSecret`
 - `Authorization--PetTrackerAdminsGroupObjectId`
 
+The backend reads Key Vault directly as an `IConfiguration` source using its managed identity. Terraform sets `KeyVault__VaultUri` on the container app so runtime configuration resolves those secrets automatically.
+
 Apply infrastructure changes:
 
 ```bash

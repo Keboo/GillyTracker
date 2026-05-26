@@ -40,6 +40,11 @@ registerRoute(
       return false;
     }
 
+    // Never serve API requests from the app shell.
+    if (url.pathname.startsWith('/api')) {
+      return false;
+    }
+
     // If this looks like a URL for a resource, because it contains
     // a file extension, skip.
     if (url.pathname.match(fileExtensionRegexp)) {

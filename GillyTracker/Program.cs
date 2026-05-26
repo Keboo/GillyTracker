@@ -3,6 +3,9 @@ using GillyTracker.Core.Auth;
 using GillyTracker.Data;
 using GillyTracker.Middleware;
 
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
+
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +15,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults()
     .AddDatabase();
+
+string? keyVaultUri = builder.Configuration["KeyVault:VaultUri"]?.Trim();
+if (Uri.TryCreate(keyVaultUri, UriKind.Absolute, out Uri? parsedKeyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(
+        parsedKeyVaultUri,
+        new DefaultAzureCredential());
+}
 
 // Add services to the container.
 builder.Services.AddControllers();

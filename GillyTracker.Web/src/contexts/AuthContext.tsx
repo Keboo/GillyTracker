@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { UserInfo } from '@/types'
-import { apiClient } from '@/services/apiClient'
+import { apiClient, buildApiUrl } from '@/services/apiClient'
 
 interface AuthContextType {
   user: UserInfo | null
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshUser])
 
   const beginMicrosoftLogin = (returnUrl = '/admin/sightings') => {
-    const target = `/api/auth/microsoft/login?returnUrl=${encodeURIComponent(returnUrl)}`
+    const target = buildApiUrl(`/api/auth/microsoft/login?returnUrl=${encodeURIComponent(returnUrl)}`)
     window.location.assign(target)
   }
 

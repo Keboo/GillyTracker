@@ -1,5 +1,12 @@
+const apiBaseUrl = (__API_BASE_URL__ || '').replace(/\/$/, '')
+
+export function buildApiUrl(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${apiBaseUrl}${normalizedPath}`
+}
+
 class ApiClient {
-  private baseUrl = __API_BASE_URL__ || ''
+  private baseUrl = apiBaseUrl
 
   async get<T>(url: string): Promise<T> {
     const response = await fetch(this.baseUrl + url, {

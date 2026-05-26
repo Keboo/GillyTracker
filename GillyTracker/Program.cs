@@ -160,8 +160,7 @@ string? microsoftCallbackPath = GetConfigValue(
     "Authentication--Microsoft--CallbackPath");
 
 if (!string.IsNullOrWhiteSpace(microsoftTenantId) &&
-    !string.IsNullOrWhiteSpace(microsoftClientId) &&
-    !string.IsNullOrWhiteSpace(microsoftClientSecret))
+    !string.IsNullOrWhiteSpace(microsoftClientId))
 {
     if (string.IsNullOrWhiteSpace(microsoftCallbackPath))
     {
@@ -177,7 +176,10 @@ if (!string.IsNullOrWhiteSpace(microsoftTenantId) &&
         options.SignInScheme = IdentityConstants.ApplicationScheme;
         options.Authority = $"https://login.microsoftonline.com/{microsoftTenantId}/v2.0";
         options.ClientId = microsoftClientId;
-        options.ClientSecret = microsoftClientSecret;
+        if (!string.IsNullOrWhiteSpace(microsoftClientSecret))
+        {
+            options.ClientSecret = microsoftClientSecret;
+        }
         options.CallbackPath = microsoftCallbackPath;
         options.ResponseType = "code";
         options.UsePkce = true;

@@ -12,7 +12,6 @@ locals {
   connection_string_no_auth       = local.base_database_connection_string
   key_vault_name                  = "gilly${lower(local.environment)}${random_string.key_vault_suffix.result}kv"
   backend_container_app_name      = "gillytracker-${lower(local.environment)}-backend"
-  backend_container_app_fqdn      = "${local.backend_container_app_name}.${data.azurerm_container_app_environment.existing.default_domain}"
   db_permissions = [
     "db_datareader",
     "db_datawriter",
@@ -120,10 +119,7 @@ resource "azuread_application" "backend_auth" {
   group_membership_claims = ["SecurityGroup"]
 
   web {
-    redirect_uris = [
-      "https://api.dogtracker.keboo.dev/signin-microsoft",
-      "https://${local.backend_container_app_fqdn}/signin-microsoft"
-    ]
+    redirect_uris = ["https://api.dogtracker.keboo.dev/signin-microsoft"]
   }
 }
 

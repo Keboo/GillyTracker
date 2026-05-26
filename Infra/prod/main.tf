@@ -345,6 +345,11 @@ module "backend_container_app" {
     KeyVault__VaultUri                    = azurerm_key_vault.app.vault_uri
     ConnectionStrings__Database           = local.database_connection_string
     APPLICATIONINSIGHTS_CONNECTION_STRING = module.application_insights.application_insights.connection_string
+    Authentication__Microsoft__TenantId   = data.azurerm_client_config.current.tenant_id
+    Authentication__Microsoft__ClientId   = azuread_application.backend_auth.client_id
+    Authentication__Microsoft__ClientSecret = azuread_application_password.backend_auth.value
+    Authentication__Microsoft__CallbackPath = "/signin-microsoft"
+    Authorization__PetTrackerAdminsGroupObjectId = data.azuread_group.pet_tracker_admins.object_id
     # CORS: Allow the Static Web App origin and custom domains
     AllowedOrigins__0 = "https://${module.static_web_app.default_host_name}"
     AllowedOrigins__1 = "https://dogtracker.keboo.dev"

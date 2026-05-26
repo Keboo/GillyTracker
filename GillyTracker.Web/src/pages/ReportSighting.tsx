@@ -61,6 +61,14 @@ export default function ReportSighting() {
   const [submitMessage, setSubmitMessage] = useState<string>('')
   const markerRef = useRef<LeafletMarker | null>(null)
 
+  useEffect(() => {
+    document.body.classList.add('home-background')
+
+    return () => {
+      document.body.classList.remove('home-background')
+    }
+  }, [])
+
   const markerPosition = useMemo<Coordinates | null>(() => {
     if (latitude === null || longitude === null) {
       return null
@@ -215,6 +223,13 @@ export default function ReportSighting() {
         </Button>
         {submitMessage && <p className={submitState === 'failed' ? 'error' : 'success'}>{submitMessage}</p>}
       </form>
+      <figure className="home-footer-image-wrap">
+        <img
+          className="home-footer-image"
+          src="/gilly-home.jpg"
+          alt="Gilly lying down and looking at the camera."
+        />
+      </figure>
     </main>
   )
 }

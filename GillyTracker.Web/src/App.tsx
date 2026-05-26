@@ -3,6 +3,7 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import Login from '@/pages/Login'
 import ReportSighting from '@/pages/ReportSighting'
 import AdminSightings from '@/pages/AdminSightings'
+import SightingDetail from '@/pages/SightingDetail'
 
 function App() {
   return (
@@ -15,6 +16,14 @@ function App() {
           element={(
             <ProtectedRoute requireAdmin>
               <AdminSightings />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/admin/sightings/:id"
+          element={(
+            <ProtectedRoute requireAdmin>
+              <SightingDetail />
             </ProtectedRoute>
           )}
         />

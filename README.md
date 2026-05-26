@@ -20,6 +20,8 @@ Set these values for the backend (for local development use user-secrets or envi
 - `Authentication:Microsoft:ClientSecret`
 - `Authorization:PetTrackerAdminsGroupObjectId` (the Entra object ID for `PetTrackerAdmins`)
 
+The backend accepts these keys in `:` (`Authentication:Microsoft:TenantId`), `__` (`Authentication__Microsoft__TenantId`), and `--` (`Authentication--Microsoft--TenantId`) formats so values can come from standard app settings, environment variables, or Key Vault-style secret names.
+
 ## Local development
 
 ```bash

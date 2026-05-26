@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Icon } from 'leaflet'
 import { MapContainer, Marker, TileLayer } from 'react-leaflet'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import { IconButton } from '@mui/material'
+import { Button } from '@mui/material'
 import { apiClient } from '@/services/apiClient'
 import type { SightingResponse } from '@/types'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
@@ -50,14 +50,16 @@ export default function SightingDetail() {
   return (
     <main className="app-shell">
       <div className="detail-header">
-        <IconButton
-          aria-label="Back to sightings"
+        <Button
+          className="detail-back-button"
+          startIcon={<ArrowBackIcon />}
+          aria-label="Back to sightings list"
           onClick={() => navigate('/admin/sightings')}
           size="small"
-          title="Back to sightings"
+          title="Back to sightings list"
         >
-          <ArrowBackIcon />
-        </IconButton>
+          Back to sightings
+        </Button>
         <h1>Sighting Details</h1>
       </div>
 

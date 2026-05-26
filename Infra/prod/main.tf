@@ -118,7 +118,10 @@ resource "azuread_application" "backend_auth" {
   group_membership_claims = ["SecurityGroup"]
 
   web {
-    redirect_uris = ["https://api.dogtracker.keboo.dev/signin-microsoft"]
+    redirect_uris = [
+      "https://api.dogtracker.keboo.dev/signin-microsoft",
+      "https://${module.backend_container_app.fqdn}/signin-microsoft"
+    ]
   }
 }
 

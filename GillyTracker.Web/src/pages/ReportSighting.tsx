@@ -141,7 +141,10 @@ export default function ReportSighting() {
       setSubmitState('failed')
       setSubmitMessage(error instanceof Error ? error.message : 'Unable to submit report right now.')
     }
+
   }
+
+  const isSubmitting = submitState === 'saving'
 
   return (
     <main className="app-shell">
@@ -218,8 +221,14 @@ export default function ReportSighting() {
             placeholder="How can I reach you? Where is Gilly now?"
           />
         </label>
-        <Button type="submit" variant="contained" size="large" disabled={submitState === 'saving'}>
-          {submitState === 'saving' ? 'Sending...' : 'Send report'}
+        <Button
+          type="submit"
+          variant="contained"
+          size="large"
+          disabled={isSubmitting}
+          startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" aria-label="Sending report" /> : undefined}
+        >
+          Send report
         </Button>
         {submitMessage && <p className={submitState === 'failed' ? 'error' : 'success'}>{submitMessage}</p>}
         <figure className="home-footer-image-wrap">

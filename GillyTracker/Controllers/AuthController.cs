@@ -15,17 +15,23 @@ namespace GillyTracker.Controllers;
 public class AuthController(
     SignInManager<ApplicationUser> signInManager,
     UserManager<ApplicationUser> userManager,
-    IAuthenticationSchemeProvider authenticationSchemeProvider,
     AdminAccessSettings adminAccessSettings,
     IConfiguration configuration) : ControllerBase
 {
     [HttpGet("microsoft/login")]
-    public async Task<IActionResult> MicrosoftLogin([FromQuery] string? returnUrl = "/admin/sightings")
+    public IActionResult MicrosoftLogin([FromQuery] string? returnUrl = "/admin/sightings")
     {
-        AuthenticationScheme? microsoftScheme =
-            await authenticationSchemeProvider.GetSchemeAsync(AdminAccessSettings.MicrosoftAuthenticationScheme);
+        string safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        string callbackUrl = Url.Action(nameof(MicrosoftCallback), values: new { returnUrl = safeReturnUrl })
+            ?? $"/api/auth/microsoft/callback?returnUrl={Uri.EscapeDataString(safeReturnUrl)}";
 
-        if (microsoftScheme is null)
+        try
+        {
+            return Challenge(
+                new AuthenticationProperties { RedirectUri = callbackUrl },
+                AdminAccessSettings.MicrosoftAuthenticationScheme);
+        }
+        catch (InvalidOperationException ex)
         {
             var missingSettings = new List<string>();
             if (string.IsNullOrWhiteSpace(GetConfigValue(
@@ -57,17 +63,9 @@ public class AuthController(
                 : string.Empty;
 
             return Problem(
-                detail: $"Microsoft Entra authentication is not configured on this environment.{missingSettingsDetail}",
+                detail: $"Microsoft Entra authentication is not configured on this environment.{missingSettingsDetail} {ex.Message}",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
-
-        string safeReturnUrl = GetSafeReturnUrl(returnUrl);
-        string callbackUrl = Url.Action(nameof(MicrosoftCallback), values: new { returnUrl = safeReturnUrl })
-            ?? $"/api/auth/microsoft/callback?returnUrl={Uri.EscapeDataString(safeReturnUrl)}";
-
-        return Challenge(
-            new AuthenticationProperties { RedirectUri = callbackUrl },
-            AdminAccessSettings.MicrosoftAuthenticationScheme);
     }
 
     [HttpGet("microsoft/callback")]

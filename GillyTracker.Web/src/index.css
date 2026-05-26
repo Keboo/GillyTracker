@@ -323,6 +323,11 @@ code {
   margin-bottom: 1rem;
 }
 
+.detail-back-button.MuiButton-root {
+  text-transform: none;
+  padding-inline: 0.3rem;
+}
+
 .detail-header h1 {
   margin: 0;
 }

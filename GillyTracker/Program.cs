@@ -8,6 +8,7 @@ using Azure.Identity;
 
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
@@ -57,6 +58,15 @@ builder.Services.AddCors(options =>
                   .AllowCredentials();
         }
     });
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto |
+        ForwardedHeaders.XForwardedHost;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 string? petTrackerAdminsGroupObjectId = GetConfigValue(
@@ -185,6 +195,22 @@ if (!string.IsNullOrWhiteSpace(microsoftTenantId) &&
 
         options.Events = new OpenIdConnectEvents
         {
+            OnRedirectToIdentityProvider = context =>
+            {
+                if (!builder.Environment.IsDevelopment() &&
+                    Uri.TryCreate(context.ProtocolMessage.RedirectUri, UriKind.Absolute, out Uri? redirectUri) &&
+                    redirectUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+                {
+                    var httpsRedirectUri = new UriBuilder(redirectUri)
+                    {
+                        Scheme = Uri.UriSchemeHttps,
+                        Port = -1
+                    };
+                    context.ProtocolMessage.RedirectUri = httpsRedirectUri.Uri.ToString();
+                }
+
+                return Task.CompletedTask;
+            },
             OnTokenValidated = context =>
             {
                 if (!AdminAuthorization.IsPetTrackerAdmin(context.Principal, petTrackerAdminsGroupObjectId))
@@ -211,6 +237,8 @@ builder.Services.AddScoped<IEmailSender<ApplicationUser>>(sp =>
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
+
+app.UseForwardedHeaders();
 
 // Enable CORS
 app.UseCors("AllowFrontend");

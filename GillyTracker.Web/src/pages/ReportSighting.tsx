@@ -1,7 +1,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type Marker as LeafletMarker } from 'leaflet'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
-import { Button, CircularProgress } from '@mui/material'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import { Button, CircularProgress, IconButton } from '@mui/material'
 import { apiClient } from '@/services/apiClient'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerIconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
@@ -81,11 +82,15 @@ export default function ReportSighting() {
     }
   }, [])
 
-  useEffect(() => {
+  const detectCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
+      setIsLocating(false)
+      setLocationMessage('Location services are unavailable on this device. Tap the map to set coordinates.')
       return
     }
 
+    setIsLocating(true)
+    setLocationMessage('')
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setSelectedCoordinates(position.coords.latitude, position.coords.longitude, { zoom: detectedLocationZoom })
@@ -99,6 +104,11 @@ export default function ReportSighting() {
       { enableHighAccuracy: true, timeout: 10000 },
     )
   }, [setSelectedCoordinates])
+
+  useEffect(() => {
+    const locateTimer = window.setTimeout(detectCurrentLocation, 0)
+    return () => window.clearTimeout(locateTimer)
+  }, [detectCurrentLocation])
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -171,6 +181,16 @@ export default function ReportSighting() {
               Long:&nbsp;
               {longitude === null ? 'Not set' : longitude.toFixed(7)}
             </span>
+            <IconButton
+              aria-label="Recenter map to my location"
+              className="map-recenter-button"
+              disabled={isLocating || !navigator.geolocation}
+              onClick={detectCurrentLocation}
+              size="small"
+              title="Recenter to my location"
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
           </div>
           {isLocating && (
             <div className="location-loading" role="status" aria-live="polite">

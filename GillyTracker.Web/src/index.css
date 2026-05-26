@@ -143,6 +143,19 @@ code {
   background: #f8fafc;
 }
 
+.map-recenter-button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 999px !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+}
+
+.map-recenter-button:hover {
+  background: #eef2ff !important;
+}
+
 .report-form {
   display: flex;
   flex-direction: column;

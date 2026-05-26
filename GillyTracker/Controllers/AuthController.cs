@@ -18,6 +18,8 @@ public class AuthController(
     AdminAccessSettings adminAccessSettings,
     IConfiguration configuration) : ControllerBase
 {
+    private readonly string[] _allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
+
     [HttpGet("microsoft/login")]
     public IActionResult MicrosoftLogin([FromQuery] string? returnUrl = "/admin/sightings")
     {
@@ -74,7 +76,13 @@ public class AuthController(
     [HttpGet("microsoft/callback")]
     public IActionResult MicrosoftCallback([FromQuery] string? returnUrl = "/admin/sightings")
     {
-        return LocalRedirect(GetSafeReturnUrl(returnUrl));
+        string safeReturnUrl = GetSafeReturnUrl(returnUrl);
+        if (Uri.TryCreate(safeReturnUrl, UriKind.Absolute, out Uri? absoluteReturnUrl))
+        {
+            return Redirect(absoluteReturnUrl.ToString());
+        }
+
+        return LocalRedirect(safeReturnUrl);
     }
 
     [HttpPost("logout")]
@@ -109,28 +117,107 @@ public class AuthController(
 
         if (string.IsNullOrWhiteSpace(returnUrl))
         {
-            return defaultReturnUrl;
+            return GetDefaultReturnUrl(defaultReturnUrl);
         }
 
         if (Url.IsLocalUrl(returnUrl))
         {
-            return returnUrl;
+            return ToFrontendUrlOrPath(returnUrl);
         }
 
         if (Uri.TryCreate(returnUrl, UriKind.Absolute, out Uri? absoluteReturnUrl))
         {
-            bool isSameHost = string.Equals(
-                absoluteReturnUrl.Host,
-                HttpContext.Request.Host.Host,
-                StringComparison.OrdinalIgnoreCase);
-
-            if (isSameHost && Url.IsLocalUrl(absoluteReturnUrl.PathAndQuery))
+            if (IsAllowedAbsoluteReturnUrl(absoluteReturnUrl))
             {
-                return absoluteReturnUrl.PathAndQuery;
+                return absoluteReturnUrl.AbsoluteUri;
             }
         }
 
-        return defaultReturnUrl;
+        return GetDefaultReturnUrl(defaultReturnUrl);
+    }
+
+    private bool IsAllowedAbsoluteReturnUrl(Uri absoluteReturnUrl)
+    {
+        if (!(absoluteReturnUrl.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+            absoluteReturnUrl.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        if (!Url.IsLocalUrl(absoluteReturnUrl.PathAndQuery))
+        {
+            return false;
+        }
+
+        if (HttpContext.Request.Host.HasValue &&
+            absoluteReturnUrl.Host.Equals(HttpContext.Request.Host.Host, StringComparison.OrdinalIgnoreCase) &&
+            GetPort(absoluteReturnUrl) == GetPort(HttpContext.Request.Host, absoluteReturnUrl.Scheme))
+        {
+            return true;
+        }
+
+        foreach (string allowedOrigin in _allowedOrigins)
+        {
+            if (Uri.TryCreate(allowedOrigin, UriKind.Absolute, out Uri? allowedOriginUri) &&
+                allowedOriginUri.Scheme.Equals(absoluteReturnUrl.Scheme, StringComparison.OrdinalIgnoreCase) &&
+                allowedOriginUri.Host.Equals(absoluteReturnUrl.Host, StringComparison.OrdinalIgnoreCase) &&
+                GetPort(allowedOriginUri) == GetPort(absoluteReturnUrl))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private string GetDefaultReturnUrl(string defaultReturnPath)
+    {
+        return ToFrontendUrlOrPath(defaultReturnPath);
+    }
+
+    private string ToFrontendUrlOrPath(string pathAndQuery)
+    {
+        if (TryGetPreferredFrontendOrigin(out string frontendOrigin))
+        {
+            return new Uri(new Uri(frontendOrigin), pathAndQuery).ToString();
+        }
+
+        return pathAndQuery;
+    }
+
+    private bool TryGetPreferredFrontendOrigin(out string origin)
+    {
+        foreach (string allowedOrigin in _allowedOrigins)
+        {
+            if (Uri.TryCreate(allowedOrigin, UriKind.Absolute, out Uri? allowedOriginUri))
+            {
+                origin = allowedOriginUri.GetLeftPart(UriPartial.Authority);
+                return true;
+            }
+        }
+
+        origin = string.Empty;
+        return false;
+    }
+
+    private static int GetPort(Uri uri)
+    {
+        if (!uri.IsDefaultPort)
+        {
+            return uri.Port;
+        }
+
+        return uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ? 443 : 80;
+    }
+
+    private static int GetPort(HostString host, string scheme)
+    {
+        if (host.Port.HasValue)
+        {
+            return host.Port.Value;
+        }
+
+        return scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ? 443 : 80;
     }
 
     private string? GetConfigValue(params string[] keys)

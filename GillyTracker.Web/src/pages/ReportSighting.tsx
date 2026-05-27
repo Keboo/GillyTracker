@@ -55,7 +55,7 @@ export default function ReportSighting() {
   const [locationMessage, setLocationMessage] = useState<string>(() =>
     navigator.geolocation
       ? ''
-      : 'Location services are unavailable on this device. Tap the map to set coordinates.',
+      : 'Location unavailable. Tap map to set.',
   )
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [submitMessage, setSubmitMessage] = useState<string>('')
@@ -93,7 +93,7 @@ export default function ReportSighting() {
   const detectCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setIsLocating(false)
-      setLocationMessage('Location services are unavailable on this device. Tap the map to set coordinates.')
+      setLocationMessage('Location unavailable. Tap map to set.')
       return
     }
 
@@ -103,11 +103,11 @@ export default function ReportSighting() {
       (position) => {
         setSelectedCoordinates(position.coords.latitude, position.coords.longitude, { zoom: detectedLocationZoom })
         setIsLocating(false)
-        setLocationMessage('Location found. Drag the marker or tap the map to adjust before submitting.')
+        setLocationMessage('Location found. Drag marker to adjust.')
       },
       () => {
         setIsLocating(false)
-        setLocationMessage('Could not read location. Tap the map to set coordinates manually.')
+        setLocationMessage('Could not locate. Tap map to set.')
       },
       { enableHighAccuracy: true, timeout: 10000 },
     )
@@ -192,24 +192,26 @@ export default function ReportSighting() {
               Long:&nbsp;
               {longitude === null ? 'Not set' : longitude.toFixed(7)}
             </span>
-            <IconButton
-              aria-label="Recenter map to my location"
-              className="map-recenter-button"
-              disabled={isLocating || !navigator.geolocation}
-              onClick={detectCurrentLocation}
-              size="small"
-              title="Recenter to my location"
-            >
-              <RefreshIcon fontSize="small" />
-            </IconButton>
+            {!isLocating && (
+              <IconButton
+                aria-label="Recenter map to my location"
+                className="map-recenter-button"
+                disabled={!navigator.geolocation}
+                onClick={detectCurrentLocation}
+                size="small"
+                title="Recenter to my location"
+              >
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            )}
+            {isLocating && (
+              <span className="coordinate-status coordinate-status-loading" role="status">
+                <CircularProgress size={16} aria-label="Reading your location" />
+                <span>Locating...</span>
+              </span>
+            )}
+            {!isLocating && locationMessage && <span className="coordinate-status">{locationMessage}</span>}
           </div>
-          {isLocating && (
-            <div className="location-loading" role="status" aria-live="polite">
-              <CircularProgress size={16} aria-label="Reading your location" />
-              <span>Reading your location...</span>
-            </div>
-          )}
-          {!isLocating && locationMessage && <p className="map-status">{locationMessage}</p>}
         </section>
         <label>
           Contact details or notes

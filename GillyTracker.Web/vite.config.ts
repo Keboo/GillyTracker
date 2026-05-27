@@ -25,6 +25,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      injectRegister: false,
       registerType: 'autoUpdate',
       includeAssets: ['icon.png', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
@@ -55,6 +56,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {

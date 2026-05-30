@@ -231,6 +231,17 @@ code {
   cursor: not-allowed;
 }
 
+.report-submit-button.MuiButton-root {
+  align-self: flex-start;
+  min-width: 12rem;
+}
+
+.report-submit-button.MuiButton-root.Mui-disabled {
+  background: #64748b;
+  color: #e2e8f0;
+  opacity: 1;
+}
+
 .danger-button {
   background: #b91c1c;
 }

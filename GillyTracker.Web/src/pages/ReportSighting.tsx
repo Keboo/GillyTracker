@@ -224,13 +224,15 @@ export default function ReportSighting() {
           />
         </label>
         <Button
+          className="report-submit-button"
           type="submit"
           variant="contained"
           size="large"
           disabled={isSubmitting}
+          aria-busy={isSubmitting}
           startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" aria-label="Sending report" /> : undefined}
         >
-          Send report
+          {isSubmitting ? 'Sending report...' : 'Send report'}
         </Button>
         {submitMessage && <p className={submitState === 'failed' ? 'error' : 'success'}>{submitMessage}</p>}
         <figure className="home-footer-image-wrap">

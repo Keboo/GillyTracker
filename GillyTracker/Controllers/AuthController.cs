@@ -18,7 +18,8 @@ public class AuthController(
     AdminAccessSettings adminAccessSettings,
     IConfiguration configuration) : ControllerBase
 {
-    private readonly string? _frontendUrl = GetConfigValue("FrontendUrl", "Frontend__Url", "Frontend--Url");
+    private readonly string? _frontendUrl =
+        GetConfigValue(configuration, "FrontendUrl", "Frontend__Url", "Frontend--Url");
 
     [HttpGet("microsoft/login")]
     public IActionResult MicrosoftLogin([FromQuery] string? returnUrl = "/admin/sightings")
@@ -143,6 +144,11 @@ public class AuthController(
     }
 
     private string? GetConfigValue(params string[] keys)
+    {
+        return GetConfigValue(configuration, keys);
+    }
+
+    private static string? GetConfigValue(IConfiguration configuration, params string[] keys)
     {
         foreach (string key in keys)
         {

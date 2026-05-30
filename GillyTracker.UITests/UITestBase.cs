@@ -302,7 +302,17 @@ public abstract class UITestBase : IAsyncDisposable
 
     protected async Task<AxeResult> AssertNoAccessibilityViolations()
     {
-        AxeResult result = await Page.RunAxe(AxeOptions);
+        AxeResult result;
+
+        try
+        {
+            result = await Page.RunAxe(AxeOptions);
+        }
+        catch (PlaywrightException ex) when (ex.Message.Contains("axe is not defined", StringComparison.OrdinalIgnoreCase))
+        {
+            // Fall back to legacy execution when axe injection fails in CI browser contexts.
+            result = await Page.RunAxeLegacy();
+        }
 
         await Assert.That(result.Violations).IsEmpty();
         return result;

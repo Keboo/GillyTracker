@@ -32,7 +32,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -184,7 +184,7 @@ jobs:
       database_connection_string: ${{ steps.terraform-outputs.outputs.database_connection_string }}
       applicationinsights_connection_string: ${{ steps.terraform-outputs.outputs.applicationinsights_connection_string }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
@@ -268,7 +268,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     environment: production
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -316,7 +316,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     environment: production
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6

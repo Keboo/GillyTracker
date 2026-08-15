@@ -23,7 +23,8 @@ public static class DependencyInjection
 
         void BuildDbOptions(DbContextOptionsBuilder options)
         {
-            options.UseAzureSql(connectionString);
+            options.UseAzureSql(connectionString, sql =>
+                sql.MigrationsHistoryTable("__EFMigrationsHistory", "GillyTracker"));
         }
         builder.Services.AddDbContextFactory<ApplicationDbContext>(BuildDbOptions);
         builder.Services.AddDbContextPool<ApplicationDbContext>(BuildDbOptions);

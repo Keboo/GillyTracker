@@ -288,6 +288,10 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: ${{ env.FRONTEND_PROJECT_PATH }}/pnpm-lock.yaml
 
+      - name: Install frontend dependencies
+        working-directory: ${{ env.FRONTEND_PROJECT_PATH }}
+        run: pnpm install --frozen-lockfile
+
       - name: Azure Login
         uses: azure/login@v3
         with:

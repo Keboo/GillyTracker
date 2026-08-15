@@ -14,6 +14,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.HasDefaultSchema("GillyTracker");
+
         modelBuilder.Entity<DogSightingReport>(entity =>
         {
             entity.ToTable("DogSightingReports", "GillyTracker");

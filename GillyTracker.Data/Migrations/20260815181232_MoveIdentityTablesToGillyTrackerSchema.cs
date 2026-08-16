@@ -15,15 +15,22 @@ namespace GillyTracker.Data.Migrations
             // NOTE: EF Core will not do this automatically for databases where migrations have already been
             // applied against the "dbo" schema (see https://learn.microsoft.com/ef/core/managing-schemas/migrations/history-table).
             // If this migration is being applied via `dotnet ef database update`/`Database.MigrateAsync()` against
-            // such a database *after* the MigrationsHistoryTable schema has been changed in code, this statement will
-            // never execute because EF Core will already believe no migrations have been applied. In that case, run
-            // the following statement manually against the target database BEFORE deploying/running this migration:
-            //   ALTER SCHEMA [GillyTracker] TRANSFER [dbo].[__EFMigrationsHistory];
+            // such a database, this statement will never execute because EF Core will already believe no
+            // migrations have been applied once it is configured to look for history in "GillyTracker" - see
+            // GillyTracker.Core.DatabaseMigrationService.RelocateMigrationsHistoryTableAsync, which performs this
+            // same relocation before Database.MigrateAsync() runs at application startup. This copy exists for
+            // deployments that apply a generated SQL script (`dotnet ef migrations script ... | sqlcmd`) directly.
             migrationBuilder.Sql("""
                 IF SCHEMA_ID(N'GillyTracker') IS NULL EXEC(N'CREATE SCHEMA [GillyTracker]');
                 IF OBJECT_ID(N'[dbo].[__EFMigrationsHistory]', N'U') IS NOT NULL
-                    AND OBJECT_ID(N'[GillyTracker].[__EFMigrationsHistory]', N'U') IS NULL
-                    EXEC(N'ALTER SCHEMA [GillyTracker] TRANSFER [dbo].[__EFMigrationsHistory]');
+                BEGIN
+                    IF OBJECT_ID(N'[GillyTracker].[__EFMigrationsHistory]', N'U') IS NOT NULL
+                        AND NOT EXISTS (SELECT 1 FROM [GillyTracker].[__EFMigrationsHistory])
+                        EXEC(N'DROP TABLE [GillyTracker].[__EFMigrationsHistory]');
+
+                    IF OBJECT_ID(N'[GillyTracker].[__EFMigrationsHistory]', N'U') IS NULL
+                        EXEC(N'ALTER SCHEMA [GillyTracker] TRANSFER [dbo].[__EFMigrationsHistory]');
+                END
                 """);
 
             migrationBuilder.RenameTable(

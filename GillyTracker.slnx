@@ -24,6 +24,7 @@
   <Project Path="GillyTracker.Core.Tests/GillyTracker.Core.Tests.csproj" />
   <Project Path="GillyTracker.Core/GillyTracker.Core.csproj" />
   <Project Path="GillyTracker.Data/GillyTracker.Data.csproj" />
+  <Project Path="GillyTracker.MigrationsHistoryFix/GillyTracker.MigrationsHistoryFix.csproj" />
   <Project Path="GillyTracker.ServiceDefaults/GillyTracker.ServiceDefaults.csproj" />
   <Project Path="GillyTracker.UITests/GillyTracker.UITests.csproj" Id="a75465c6-4ed1-4ab4-b492-9697c5727ffc" />
   <Project Path="GillyTracker.Web/GillyTracker.Web.csproj" />

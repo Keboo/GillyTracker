@@ -127,6 +127,21 @@ jobs:
             --startup-project .\GillyTracker.AppHost\GillyTracker.AppHost.csproj `
             --output efbundle
 
+      # Relocates the "__EFMigrationsHistory" table to the "GillyTracker" schema before the
+      # migration bundle runs. EF Core does not do this automatically for databases that already
+      # have migrations recorded under the table's previous schema (see
+      # GillyTracker.MigrationsHistoryFix/Program.cs for details), so this must run first.
+      - name: Build Migrations History Fix Tool
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        run: |
+          dotnet publish GillyTracker.MigrationsHistoryFix/GillyTracker.MigrationsHistoryFix.csproj `
+            --configuration Release `
+            --self-contained `
+            -r linux-x64 `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            --output historyfix
+
       - name: Azure Login
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
         uses: azure/login@v3
@@ -141,6 +156,16 @@ jobs:
         with:
           name: efbundle
           path: 'efbundle'
+          storage-account: keboogithub
+          container-name: gillytracker
+          create-container: true
+
+      - name: Upload Migrations History Fix Tool
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+        uses: Keboo/sa-upload@v1
+        with:
+          name: historyfix
+          path: 'historyfix/GillyTracker.MigrationsHistoryFix'
           storage-account: keboogithub
           container-name: gillytracker
           create-container: true
@@ -247,6 +272,25 @@ jobs:
           name: efbundle
           storage-account: keboogithub
           container-name: gillytracker
+
+      - name: Download Migrations History Fix Tool
+        uses: Keboo/sa-download@v1
+        with:
+          name: historyfix
+          storage-account: keboogithub
+          container-name: gillytracker
+
+      - name: Relocate Migrations History Table
+        run: |
+          chmod +x GillyTracker.MigrationsHistoryFix
+          $env:ConnectionStrings__Database = '${{ needs.get-infrastructure-outputs.outputs.database_connection_string }}'
+          ./GillyTracker.MigrationsHistoryFix
+          if ($LASTEXITCODE -eq 0) {
+            rm GillyTracker.MigrationsHistoryFix
+            exit 0
+          }
+          rm GillyTracker.MigrationsHistoryFix
+          throw "Migrations history table relocation failed."
 
       - name: Apply Migration
         run: |

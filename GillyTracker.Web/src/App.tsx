@@ -4,6 +4,7 @@ import Login from '@/pages/Login'
 import ReportSighting from '@/pages/ReportSighting'
 import AdminSightings from '@/pages/AdminSightings'
 import SightingDetail from '@/pages/SightingDetail'
+import ImportSightings from '@/pages/ImportSightings'
 
 function App() {
   return (
@@ -25,6 +26,14 @@ function App() {
           element={(
             <ProtectedRoute requireAdmin>
               <SightingDetail />
+            </ProtectedRoute>
+          )}
+        />
+        <Route
+          path="/admin/sightings/import"
+          element={(
+            <ProtectedRoute requireAdmin>
+              <ImportSightings />
             </ProtectedRoute>
           )}
         />

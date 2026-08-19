@@ -333,6 +333,11 @@ code {
   margin-bottom: 1rem;
 }
 
+.detail-header h1 {
+  margin: 0;
+  flex: 1;
+}
+
 .detail-back-button.MuiIconButton-root {
   color: #0f172a;
   font-size: 2rem;
@@ -348,14 +353,39 @@ code {
   outline-offset: 2px;
 }
 
-.detail-header h1 {
-  margin: 0;
-}
-
 .sighting-detail {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.import-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 88%);
+}
+
+.import-form label {
+  font-weight: 600;
+}
+
+.import-result {
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.import-errors {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: #b91c1c;
 }
 
 .detail-fields {

@@ -44,22 +44,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           MuiLink: {
             styleOverrides: {
               root: {
-                ...(mode === 'dark' && {
-                  color: '#90caf9',
-                }),
+                color: mode === 'dark' ? '#90caf9' : '#1976d2',
+                '&:visited': {
+                  color: mode === 'dark' ? '#90caf9' : '#1976d2',
+                },
               },
             },
           },
           MuiCssBaseline: {
             styleOverrides: {
-              ...(mode === 'dark' && {
-                a: {
-                  color: '#90caf9',
-                  '&:visited': {
-                    color: '#ce93d8',
-                  },
+              a: {
+                color: mode === 'dark' ? '#90caf9' : '#1976d2',
+                '&:visited': {
+                  color: mode === 'dark' ? '#90caf9' : '#1976d2',
                 },
-              }),
+              },
             },
           },
         },

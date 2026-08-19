@@ -19,3 +19,13 @@ export interface ApiResponse<T = void> {
   data?: T
   errors?: string[]
 }
+
+export interface ImportSightingsRowError {
+  lineNumber: number
+  message: string
+}
+
+export interface ImportSightingsResponse {
+  importedCount: number
+  errors: ImportSightingsRowError[]
+}

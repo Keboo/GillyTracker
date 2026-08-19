@@ -44,6 +44,26 @@ class ApiClient {
     return text ? JSON.parse(text) : undefined as T
   }
 
+  async postForm<T = void>(url: string, formData: FormData): Promise<T> {
+    const response = await fetch(this.baseUrl + url, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(error || `HTTP error! status: ${response.status}`)
+    }
+
+    if (response.status === 204) {
+      return undefined as T
+    }
+
+    const text = await response.text()
+    return text ? JSON.parse(text) : undefined as T
+  }
+
   async delete<T = void>(url: string): Promise<T> {
     const response = await fetch(this.baseUrl + url, {
       method: 'DELETE',

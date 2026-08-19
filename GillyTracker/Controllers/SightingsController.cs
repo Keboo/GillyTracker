@@ -74,6 +74,45 @@ public class SightingsController(ApplicationDbContext dbContext, ILogger<Sightin
             report.CreatedDate));
     }
 
+    [HttpPost("import")]
+    [Authorize(Policy = AdminAccessSettings.PolicyName)]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    public async Task<IActionResult> ImportReports(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            ModelState.AddModelError("file", "A CSV file is required.");
+            return ValidationProblem(ModelState);
+        }
+
+        SightingCsvParseResult parseResult;
+        await using (var stream = file.OpenReadStream())
+        using (var reader = new StreamReader(stream))
+        {
+            parseResult = SightingCsvParser.Parse(reader);
+        }
+
+        var reports = parseResult.Rows
+            .Select(row => new DogSightingReport
+            {
+                Latitude = row.Latitude,
+                Longitude = row.Longitude,
+                ReporterDetails = row.Details,
+                CreatedDate = row.CreatedDate
+            })
+            .ToList();
+
+        if (reports.Count > 0)
+        {
+            dbContext.DogSightingReports.AddRange(reports);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return Ok(new ImportSightingsResponse(
+            reports.Count,
+            parseResult.Errors.Select(e => new ImportSightingsRowError(e.LineNumber, e.Message)).ToList()));
+    }
+
     [HttpGet("{id:guid}")]
     [Authorize(Policy = AdminAccessSettings.PolicyName)]
     public async Task<IActionResult> GetReport(Guid id, CancellationToken cancellationToken)
@@ -113,3 +152,7 @@ public class SightingsController(ApplicationDbContext dbContext, ILogger<Sightin
 public record CreateSightingRequest(decimal Latitude, decimal Longitude, string? Details);
 
 public record SightingResponse(Guid Id, decimal Latitude, decimal Longitude, string? Details, DateTimeOffset CreatedDate);
+
+public record ImportSightingsResponse(int ImportedCount, IReadOnlyList<ImportSightingsRowError> Errors);
+
+public record ImportSightingsRowError(int LineNumber, string Message);

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DeleteIcon from '@mui/icons-material/Delete'
-import { IconButton } from '@mui/material'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
+import { Button, IconButton } from '@mui/material'
 import { apiClient } from '@/services/apiClient'
 import type { SightingResponse } from '@/types'
 
@@ -55,7 +56,17 @@ export default function AdminSightings() {
 
   return (
     <main className="app-shell">
-      <h1>Posted Sightings</h1>
+      <div className="detail-header">
+        <h1>Posted Sightings</h1>
+        <Button
+          variant="contained"
+          className="report-submit-button"
+          startIcon={<UploadFileIcon />}
+          onClick={() => navigate('/admin/sightings/import')}
+        >
+          Import CSV
+        </Button>
+      </div>
       <p className="hint">Latest sightings appear first.</p>
 
       {loading && <p>Loading sightings...</p>}

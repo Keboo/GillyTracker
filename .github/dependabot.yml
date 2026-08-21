@@ -31,3 +31,9 @@ updates:
       pnpm:
         patterns:
           - "*"
+    ignore:
+      # typescript-eslint does not yet support TypeScript 7.x. Remove this
+      # once https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      # is resolved.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]

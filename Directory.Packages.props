@@ -5,12 +5,12 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Aspire.Hosting.Azure" Version="13.5.3" />
-    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.5.3" />
-    <PackageVersion Include="Aspire.Hosting.Azure.Sql" Version="13.5.3" />
-    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.5.3" />
-    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.5.3" />
-    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.5.3" />
+    <PackageVersion Include="Aspire.Hosting.Azure" Version="13.5.4" />
+    <PackageVersion Include="Aspire.Hosting.Azure.AppContainers" Version="13.5.4" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Sql" Version="13.5.4" />
+    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.5.4" />
+    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.5.4" />
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.5.4" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.2" />
     <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
@@ -30,12 +30,12 @@
          incompatible with Microsoft.Data.SqlClient.Extensions.Azure (mixing them causes an
          AmbiguousMatchException in SqlAuthenticationProviderManager). Pin SqlClient itself
          so both packages are from the same release line. -->
-    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.0.3" />
+    <PackageVersion Include="Microsoft.Data.SqlClient" Version="7.1.0" />
     <!-- Required for "Authentication=Active Directory Default" / Entra ID connection strings.
          Microsoft.Data.SqlClient 6+ moved Azure AD authentication providers into this
          separate package; without it, ActiveDirectoryDefault connections fail with
          "Cannot find an authentication provider for 'ActiveDirectoryDefault'". -->
-    <PackageVersion Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.0.3" />
+    <PackageVersion Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
@@ -46,15 +46,15 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="Moq.AutoMock" Version="4.0.3" />
-    <PackageVersion Include="TUnit" Version="1.67.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.18.0" />
-    <PackageVersion Include="Polly.Core" Version="8.7.0" />
+    <PackageVersion Include="TUnit" Version="1.68.17" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
+    <PackageVersion Include="Polly.Core" Version="8.8.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.2" />
   </ItemGroup>
 </Project>
